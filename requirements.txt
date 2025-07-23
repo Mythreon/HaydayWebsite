@@ -1,0 +1,14 @@
+flask
+gunicorn
+requests
+pymongo[srv]
+motor
+Flask-WTF
+Flask-Limiter
+python-dotenv
+nest_asyncio
+httpx
+aiohttp
+pytz
+pytesseract
+Pillow

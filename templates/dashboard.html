@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - HayDay 🍀</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .dashboard-wrapper {
+      display: flex;
+      min-height: 100vh;
+      margin-top: 60px;
+    }
+
+    .sidebar {
+      width: 240px;
+      background-color: #222;
+      color: white;
+      padding: 20px;
+      font-family: sans-serif;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .sidebar a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .sidebar a:hover {
+      background-color: #333;
+    }
+
+    .dashboard-content {
+      flex-grow: 1;
+      padding: 40px;
+      background-color: #f4f4f4;
+    }
+
+    body.dark .dashboard-content {
+      background-color: #1e1e1e;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+
+    body.dark .card {
+      background: #2b2b2b;
+      color: white;
+    }
+
+  .toggle-row {
+    display: grid;
+    grid-template-columns: 180px 140px 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .toggle-row label {
+    font-weight: bold;
+  }
+
+  .toggle-row select,
+  .toggle-row input[type="text"] {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  body.dark .toggle-row select,
+  body.dark .toggle-row input[type="text"] {
+    background-color: #1e1e1e;
+    color: #eee;
+    border: 1px solid #444;
+  }
+
+
+
+  </style>
+</head>
+<body>
+  {% include 'header.html' %}
+<script>
+  console.log("Logged in as: {{ session.get('discord_id') }}");
+</script>
+
+  <div class="dashboard-wrapper">
+    <aside class="sidebar">
+      <h2>Dashboard</h2>
+      <a href="/dashboard">Bot Settings</a>
+      <a href="/giveaway-dashboard">Giveaways</a>
+      <a href="#">Verifications</a>
+      <a href="#">Auctions</a>
+      <a href="#">Moderation</a>
+      <a href="#">Starboard</a>
+    </aside>
+        <main class="dashboard-content">
+        <div class="card">
+            <h2>Welcome, {{ username }} 👋</h2>
+            <p>This is your new HayDay 🍀 bot dashboard.</p>
+        </div>
+            <div class="card">
+              <h3>🔒 Toggle Feature Buttons</h3>
+              <div id="button-settings"></div>
+            </div>
+            <div class="card">
+            <h3>Custom Prefix</h3>
+            
+            <label for="prefix-input">Prefix:</label>
+            <input type="text" name="prefix" id="prefix-input" value="{{ prefix }}" style="margin-left:10px;">
+            
+            <button type="button" onclick="updateSetting(event, 'prefix')">Save</button>
+            
+            <p id="save-status" style="font-weight: bold; margin-top: 8px;"></p>
+            </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script>
+function updateSetting(event, key) {
+  event.preventDefault();
+
+  const value = document.querySelector(`[name="${key}"]`).value;
+
+  fetch('/api/update-setting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, value }),
+    credentials: 'include',
+    redirect: 'manual'
+  })
+  .then(async res => {
+    if (res.type === "opaqueredirect" || res.status === 0) {
+      const status = document.getElementById("save-status");
+      status.innerText = "❌ You're not logged in.";
+      status.style.color = "red";
+      setTimeout(() => status.innerText = "", 4000);
+      return;
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (!res.ok || !contentType.includes("application/json")) {
+      const status = document.getElementById("save-status");
+      status.innerText = "❌ Unexpected error or login expired.";
+      status.style.color = "red";
+      setTimeout(() => status.innerText = "", 4000);
+      return;
+    }
+
+    const data = await res.json();
+    const status = document.getElementById("save-status");
+    if (data.message) {
+      status.innerText = "✅ " + data.message;
+      status.style.color = "green";
+    } else {
+      status.innerText = "❌ " + (data.error || "An unknown error occurred.");
+      status.style.color = "red";
+    }
+    setTimeout(() => status.innerText = "", 4000);
+  })
+  .catch(() => {
+    const status = document.getElementById("save-status");
+    status.innerText = "❌ Network error. Please try again.";
+    status.style.color = "red";
+    setTimeout(() => status.innerText = "", 4000);
+  });
+}
+  const features = ["staff_application", "support", "giveaway", "verification", "auction"];
+  async function loadButtonSettings() {
+    const container = document.getElementById("button-settings");
+    const res = await fetch("/api/button-toggles");
+    const toggles = await res.json();
+
+    features.forEach(feature => {
+      const row = document.createElement("div");
+      row.className = "toggle-row";
+
+      const label = document.createElement("label");
+      label.textContent = feature.replace("_", " ").toUpperCase();
+
+      const select = document.createElement("select");
+      select.innerHTML = `
+        <option value="true" ${toggles[feature]?.enabled ? "selected" : ""}>Enabled</option>
+        <option value="false" ${!toggles[feature]?.enabled ? "selected" : ""}>Disabled</option>
+      `;
+
+      const reasonInput = document.createElement("input");
+      reasonInput.type = "text";
+      reasonInput.placeholder = "Optional reason...";
+      reasonInput.value = toggles[feature]?.reason || "";
+
+      select.onchange = () => updateButtonToggle(feature, select.value, reasonInput.value);
+      reasonInput.onblur = () => updateButtonToggle(feature, select.value, reasonInput.value);
+
+      row.appendChild(label);
+      row.appendChild(select);
+      row.appendChild(reasonInput);
+      container.appendChild(row);
+    });
+  }
+
+
+  async function updateButtonToggle(key, enabled, reason) {
+    await fetch("/api/button-toggles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, enabled: enabled === "true", reason }),
+      credentials: "include"
+    });
+  }
+
+  loadButtonSettings();
+</script>
+</body>
+</html>
+
+
