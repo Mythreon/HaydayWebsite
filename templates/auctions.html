@@ -6,138 +6,134 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <style>
-    .auction-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    padding: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
-    }
+.auction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-    .auction-card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+.auction-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
 
-    body.dark .auction-card {
-    background: #1f1f1f;
-    color: #eee;
-    }
+body.dark .auction-card {
+  background: #1f1f1f;
+  color: #eee;
+}
 
-    /* Buttons */
-    button {
-    margin: 0 6px;
-    padding: 8px 12px;
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #f0f0f0;
-    transition: background 0.2s;
-    }
+/* Buttons */
+button {
+  margin: 0 6px;
+  padding: 8px 12px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #f0f0f0;
+  transition: background 0.2s;
+}
 
-    button:hover {
-    background: #ddd;
-    }
+button:hover {
+  background: #ddd;
+}
 
-    body.dark button {
-    background: #2c2c2c;
-    color: #eee;
-    }
+body.dark button {
+  background: #2c2c2c;
+  color: #eee;
+}
 
-    body.dark button:hover {
-    background: #3a3a3a;
-    }
+body.dark button:hover {
+  background: #3a3a3a;
+}
 
-    .active-filter {
-    background: #c6f7d4;
-    border: 1px solid #b0e5c1;
-    }
+.active-filter {
+  background: #c6f7d4;
+  border: 1px solid #b0e5c1;
+}
 
-    body.dark .active-filter {
-    background: #3e5b47;
-    border: 1px solid #4f7d5c;
-    }
+body.dark .active-filter {
+  background: #3e5b47;
+  border: 1px solid #4f7d5c;
+}
 
-    /* Responsive padding */
-    @media (max-width: 600px) {
-    .auction-grid {
-        padding: 10px;
-    }
-    }
+/* Bid form */
+.bid-form {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-    /* Bid form */
-    .bid-form {
-    margin-top: 10px;
-    display: flex;
-    gap: 8px;
-    }
+.bid-form input {
+  flex: 1 1 60%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  min-width: 120px;
+}
 
-    .bid-form input {
-    flex: 1;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    }
+body.dark .bid-form input {
+  background: #2a2a2a;
+  color: #eee;
+  border: 1px solid #444;
+}
 
-    body.dark .bid-form input {
-    background: #2a2a2a;
-    color: #eee;
-    border: 1px solid #444;
-    }
+.bid-form button {
+  flex: 1 1 35%;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #90e190;
+  cursor: pointer;
+}
 
-    .bid-form button {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    background: #90e190;
-    cursor: pointer;
-    }
+body.dark .bid-form button {
+  background: #3f7d3f;
+  color: white;
+}
 
-    body.dark .bid-form button {
-    background: #3f7d3f;
-    color: white;
-    }
+/* Theme toggle button */
+.theme-toggle {
+  cursor: pointer;
+  padding: 6px 12px;
+  border: none;
+  background: #ddd;
+  border-radius: 6px;
+  font-weight: bold;
+}
 
+body.dark .theme-toggle {
+  background: #444;
+  color: #eee;
+}
 
-    /* Theme toggle button */
-    .theme-toggle {
-    cursor: pointer;
-    padding: 6px 12px;
-    border: none;
-    background: #ddd;
-    border-radius: 6px;
-    font-weight: bold;
-    }
+.verify-warning {
+  background: #fff3f3;
+  color: #a94442;
+  border: 1px solid #f5c6cb;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 15px;
+}
 
-    body.dark .theme-toggle {
-    background: #444;
-    color: #eee;
-    }
-  .verify-warning {
-    background: #fff3f3;
-    color: #a94442;
-    border: 1px solid #f5c6cb;
-    padding: 12px;
-    margin-top: 12px;
-    border-radius: 8px;
-    font-weight: 500;
-    font-size: 15px;
-  }
+.verify-warning a {
+  color: #a94442;
+  text-decoration: underline;
+}
 
-  .verify-warning a {
-    color: #a94442;
-    text-decoration: underline;
-  }
-
-  body.dark .verify-warning {
-    background: #2c1f1f;
-    color: #f28a8a;
-    border-color: #a94442;
-  }
+body.dark .verify-warning {
+  background: #2c1f1f;
+  color: #f28a8a;
+  border-color: #a94442;
+}
 
 .refresh-btn {
   display: inline-block;
@@ -161,6 +157,46 @@ body.dark .refresh-btn {
 
 body.dark .refresh-btn:hover {
   background-color: #1a73e8;
+}
+
+/* Mobile Specific */
+@media (max-width: 600px) {
+  .auction-grid {
+    padding: 16px;
+  }
+
+  .bid-form {
+    flex-direction: column;
+  }
+
+  .bid-form input,
+  .bid-form button {
+    width: 100%;
+  }
+
+  .bid-form button {
+    margin-top: 6px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+
+  .refresh-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .verify-warning {
+    font-size: 14px;
+  }
+
+  .auction-card h3 {
+    font-size: 1.1rem;
+  }
 }
 
 

@@ -5,6 +5,13 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+    }
+
     .user-list-wrapper {
       max-width: 1000px;
       margin: 120px auto;
@@ -12,7 +19,7 @@
       background: white;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      font-family: 'Segoe UI', sans-serif;
+      box-sizing: border-box;
     }
 
     body.dark .user-list-wrapper {
@@ -20,10 +27,33 @@
       color: #eee;
     }
 
+    h2 {
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
+      min-width: 600px;
     }
 
     th, td {
@@ -44,25 +74,14 @@
       background: #2a2a2a;
     }
 
-    .search-bar {
-      margin-bottom: 20px;
-    }
-
-    .search-bar input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
     .pagination {
       margin-top: 20px;
       text-align: center;
+      flex-wrap: wrap;
     }
 
     .pagination a {
-      margin: 0 6px;
+      margin: 4px 6px;
       padding: 6px 12px;
       text-decoration: none;
       border: 1px solid #ccc;
@@ -80,6 +99,21 @@
       color: white;
     }
 
+    @media (max-width: 600px) {
+      .user-list-wrapper {
+        margin: 100px 15px 40px;
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+      }
+
+      .pagination a {
+        font-size: 14px;
+        padding: 5px 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -92,26 +126,28 @@
       <input type="text" name="q" placeholder="Search by username or ID..." value="{{ query }}">
     </form>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Discord ID</th>
-          <th>Public</th>
-          <th>Profile</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %}
-        <tr>
-          <td>{{ user.username }}</td>
-          <td>{{ user._id }}</td>
-          <td>{{ "✅" if user.public_profile else "🔒" }}</td>
-          <td><a href="/profile/{{ user._id }}">🔗 View</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Discord ID</th>
+            <th>Public</th>
+            <th>Profile</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user._id }}</td>
+            <td>{{ "✅" if user.public_profile else "🔒" }}</td>
+            <td><a href="/profile/{{ user._id }}">🔗 View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     <div class="pagination">
       {% for p in range(1, total_pages + 1) %}

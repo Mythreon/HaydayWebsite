@@ -5,6 +5,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+    }
+
     .purchases-wrapper {
       max-width: 1000px;
       margin: 120px auto;
@@ -12,7 +18,7 @@
       padding: 30px;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      font-family: 'Segoe UI', sans-serif;
+      box-sizing: border-box;
     }
 
     body.dark .purchases-wrapper {
@@ -22,6 +28,7 @@
 
     h2 {
       margin-bottom: 20px;
+      font-size: 1.6rem;
     }
 
     form.filter-form {
@@ -32,26 +39,24 @@
       align-items: center;
     }
 
-    form.filter-form input {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
+    form.filter-form input,
     form.filter-form button,
     form.filter-form a {
-      padding: 8px 14px;
+      font-size: 14px;
       border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
+    }
+
+    form.filter-form input {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
     }
 
     form.filter-form button {
       background: #4caf50;
       color: white;
+      padding: 8px 14px;
+      border: none;
+      cursor: pointer;
     }
 
     form.filter-form button:hover {
@@ -61,6 +66,9 @@
     form.filter-form a {
       background: #e0e0e0;
       color: #333;
+      padding: 8px 14px;
+      text-decoration: none;
+      font-weight: 600;
     }
 
     body.dark form.filter-form a {
@@ -68,15 +76,21 @@
       color: #eee;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+      min-width: 700px;
     }
 
     th, td {
       padding: 10px;
       border-bottom: 1px solid #ccc;
+      text-align: left;
     }
 
     tr:hover {
@@ -89,7 +103,6 @@
 
     th {
       background: #f5f5f5;
-      text-align: left;
     }
 
     body.dark th {
@@ -99,10 +112,11 @@
     .pagination {
       text-align: center;
       margin-top: 20px;
+      flex-wrap: wrap;
     }
 
     .pagination a {
-      margin: 0 6px;
+      margin: 4px 6px;
       padding: 6px 12px;
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -118,6 +132,33 @@
     .pagination a.active {
       background-color: #4caf50;
       color: white;
+    }
+
+    @media (max-width: 600px) {
+      .purchases-wrapper {
+        margin: 100px 15px 40px;
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+      }
+
+      form.filter-form input,
+      form.filter-form button,
+      form.filter-form a {
+        flex: 1 1 100%;
+      }
+
+      form.filter-form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .pagination a {
+        font-size: 14px;
+        padding: 5px 10px;
+      }
     }
   </style>
 </head>
@@ -135,46 +176,47 @@
       <a href="/admin/purchases/export?start={{ start }}&end={{ end }}&q={{ query }}">⬇️ Export CSV</a>
     </form>
 
-    <table>
-      <thead>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Item</th>
+            <th>Key</th>
+            <th>Price</th>
+            <th>Time</th>
+            <th style="text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in purchases %}
         <tr>
-          <th>User</th>
-          <th>Item</th>
-          <th>Key</th>
-          <th>Price</th>
-          <th>Time</th>
-          <th style="text-align: center;">Action</th>
+          <td>
+            {% if p.display_name != p.user_id|string %}
+              <a href="/profile/{{ p.user_id }}">{{ p.display_name }}</a>
+            {% else %}
+              {{ p.user_id }}
+            {% endif %}
+          </td>
+          <td>{{ p.name }}</td>
+          <td><code>{{ p.item }}</code></td>
+          <td>{{ p.price }}</td>
+          <td>{{ p.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td style="text-align: center;">
+            {% if p.get("refunded") %}
+              <span style="color: gray; font-weight: bold;">✔ Refunded</span>
+            {% else %}
+              <form method="post" action="/admin/refund" style="display: inline;" onsubmit="return confirm('Refund this purchase?');">
+                <input type="hidden" name="purchase_id" value="{{ p._id }}">
+                <button type="submit" style="background: #d32f2f; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-weight: 600; cursor: pointer;">🗑️ Refund</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
-      </thead>
-    <tbody>
-    {% for p in purchases %}
-    <tr>
-        <td>
-        {% if p.display_name != p.user_id|string %}
-            <a href="/profile/{{ p.user_id }}">{{ p.display_name }}</a>
-        {% else %}
-            {{ p.user_id }}
-        {% endif %}
-        </td>
-        <td>{{ p.name }}</td>
-        <td><code>{{ p.item }}</code></td>
-        <td>{{ p.price }}</td>
-        <td>{{ p.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td style="text-align: center;">
-        {% if p.get("refunded") %}
-            <span style="color: gray; font-weight: bold;">✔ Refunded</span>
-        {% else %}
-            <form method="post" action="/admin/refund" style="display: inline;" onsubmit="return confirm('Refund this purchase?');">
-            <input type="hidden" name="purchase_id" value="{{ p._id }}">
-            <button type="submit" style="background: #d32f2f; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-weight: 600; cursor: pointer;">🗑️ Refund</button>
-            </form>
-        {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-
-    </table>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     <div class="pagination">
       {% for p in range(1, total_pages + 1) %}

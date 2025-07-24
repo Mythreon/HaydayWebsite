@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <title>HayDay 🍀</title>
+  <meta name="google-site-verification" content="XytNN-ofO92AjDuNxZaJNX_4ItyUMYsHj1pgQ4B-Hp4" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
@@ -10,7 +11,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      min-height: 100%;
       overflow-x: hidden;
       overflow-y: auto;
       font-family: 'Segoe UI', sans-serif;
@@ -47,9 +48,7 @@
       padding: 100px 20px 60px;
       max-width: 1200px;
       margin: 0 auto;
-      overflow: hidden; /* prevent body scroll */
     }
-
 
     .hero {
       text-align: center;
@@ -95,14 +94,17 @@
   padding: 0;
   color: white;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  margin-bottom: 30px;
 }
 
 
 
     .widget h2 {
+      margin: 12px 20px 8px;
       margin-top: 0;
       font-size: 1.2rem;
       margin-bottom: 12px;
+      font-weight: 600;
     }
 
     .widget p {
@@ -177,6 +179,17 @@
   transform: translateY(0);
 }
 
+@media (max-width: 900px) {
+  .widget-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .widget-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
   </style>
 </head>

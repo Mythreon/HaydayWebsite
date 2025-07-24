@@ -204,6 +204,47 @@ body.dark .page.active {
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+@media (max-width: 600px) {
+  .log-card {
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  .log-section h1,
+  .log-section h2 {
+    font-size: 18px;
+    margin-top: 20px;
+    padding-bottom: 6px;
+  }
+
+  form input[type="text"],
+  form select,
+  form input[type="date"] {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  form button,
+  .nav-button {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .log-grid {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 16px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .jump-input {
+    width: 100%;
+  }
+}
 
     
   </style>

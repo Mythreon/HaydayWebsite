@@ -178,6 +178,55 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+@media (max-width: 600px) {
+  .container {
+    margin: 80px 10px 60px;
+    padding: 20px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .checkbox-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  #sortMode,
+  #searchInput,
+  #machineFilter {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    padding: 16px;
+    font-size: 14px;
+  }
+
+  .result-card h3 {
+    font-size: 1.1rem;
+  }
+
+  .summary-box {
+    font-size: 14px;
+  }
+}
+
+
   </style>
 </head>
 <body>

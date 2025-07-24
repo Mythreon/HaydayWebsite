@@ -149,53 +149,188 @@
     top: 2px;
     }
 
+.leaderboard-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-tabs a {
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.leaderboard-tabs a:hover {
+  background: var(--button-hover);
+}
+
+.leaderboard-tabs .active {
+  background: #4caf50;
+  color: white;
+}
+.highlighted-user {
+  background-color: #2e7d32;  /* A nice green highlight */
+  color: white;
+  font-weight: bold;
+  border-radius: 10px;
+}
+@media (max-width: 600px) {
+  .leaderboard-entry {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .leaderboard-header {
+    display: none;
+  }
+
+  .rank {
+    width: auto;
+    text-align: left;
+  }
+
+  .user-info {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .level,
+  .xp {
+    width: auto;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  .leaderboard-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 10px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
 
 
 </style>
 
 </head>
 <body>
-  {% include 'header.html' %}
+{% include 'header.html' %}
 
-  <div class="leaderboard-container">
-    <h2 style="text-align:center;">🏆 Leaderboard</h2>
-        <div class="leaderboard-header">
-        <div class="rank">Rank</div>
-        <div class="user-info">User</div>
-        <div class="level">Level</div>
-        <div class="xp">XP</div>
-        </div>
-    {% for user in users %}
-      <div class="leaderboard-entry">
-        <div class="rank">
-          {% if user.rank == 1 %}🥇{% elif user.rank == 2 %}🥈{% elif user.rank == 3 %}🥉{% else %}#{{ user.rank }}{% endif %}
-        </div>
-        <div class="user-info">
-          <img src="https://cdn.discordapp.com/avatars/{{ user._id }}/{{ user.get('avatar_hash', '0') }}.png" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'" class="user-avatar">
-          <span class="username" title="{{ user.get('real_username', '') }}">
-  {{ user.get('username', 'Unknown') }}
-  {% if user.get('is_boosting') %}
-    <img src="{{ url_for('static', filename='img/nitro.png') }}" alt="Booster" class="boost-icon">
+<div class="leaderboard-container">
+  <div class="leaderboard-tabs">
+  <a href="/leaderboard?type=level" class="{{ 'active' if type == 'level' else '' }}">Level</a>
+  <a href="/leaderboard?type=messages" class="{{ 'active' if type == 'messages' else '' }}">Messages</a>
+  <a href="/leaderboard?type=mentions" class="{{ 'active' if type == 'mentions' else '' }}">Mentions</a>
+  <a href="/leaderboard?type=hosted" class="{{ 'active' if type == 'hosted' else '' }}">Giveaways Hosted</a>
+  <a href="/leaderboard?type=wins" class="{{ 'active' if type == 'wins' else '' }}">Giveaway Wins</a>
+  <a href="/leaderboard?type=streak" class="{{ 'active' if type == 'streak' else '' }}">Daily Streak</a>
+  <a href="/leaderboard?type=trivia" class="{{ 'active' if type == 'trivia' else '' }}">Trivia Accuracy</a>
+  {% if is_staff %}
+    <a href="/leaderboard?type=verifications" class="{{ 'active' if type == 'verifications' else '' }}">Staff Verifications</a>
   {% endif %}
-</span>
 
-        </div>
-        <div class="level">Lv {{ user.level }}</div>
-        <div class="xp">{{ user.xp_formatted }}</div>
-      </div>
-    {% endfor %}
 
-    <div class="pagination">
-      {% if page > 1 %}
-        <a href="{{ url_for('leaderboard', page=page-1) }}">⬅ Prev</a>
-      {% endif %}
-      {% if page < total_pages %}
-        <a href="{{ url_for('leaderboard', page=page+1) }}">Next ➡</a>
-      {% endif %}
-    </div>
+
+
+
+</div>
+  <h2 style="text-align:center;">🏆 Leaderboard</h2>
+{% if type == "trivia" %}
+<p style="text-align: center; margin-bottom: 20px; color: var(--text-color); font-size: 0.95rem;">
+  📌 Only users who have answered at least <strong>5 trivia questions</strong> appear on this leaderboard.
+</p>
+{% endif %}
+<div class="leaderboard-header">
+  <div class="rank">Rank</div>
+  <div class="user-info">User</div>
+
+  {% if type == "messages" %}
+    <div class="level">Messages</div>
+  {% elif type == "hosted" %}
+    <div class="level">Hosted</div>
+  {% elif type == "wins" %}
+    <div class="level">Wins</div>
+  {% elif type == "streak" %}
+    <div class="level">Streak</div>
+  {% elif type == "mentions" %}
+    <div class="level">Mentions</div>
+  {% elif type == "trivia" %}
+    <div class="level" style="min-width: 180px;">Accuracy</div>
+  {% elif type == "verifications" %}
+    <div class="level">Verifications</div>
+  {% else %}
+    <div class="level">Level</div>
+    <div class="xp">XP</div>
+  {% endif %}
+</div>
+
+
+
+{% for user in users %}
+<div class="leaderboard-entry {% if viewer_id == user._id|string %}highlighted-user{% endif %}">
+  <div class="rank">
+    {% if user.rank == 1 %}🥇
+    {% elif user.rank == 2 %}🥈
+    {% elif user.rank == 3 %}🥉
+    {% else %}#{{ user.rank }}
+    {% endif %}
+  </div>
+  <div class="user-info">
+    <img src="{{ user.avatar_url }}" class="user-avatar">
+    <span class="username">
+      {{ user.display_name }}
+      {% if viewer_id == user._id|string %}<span style="opacity: 0.6;">(You)</span>{% endif %}
+    </span>
   </div>
 
-  {% include 'footer.html' %}
+  {% if type == "trivia" %}
+    <div class="level" style="min-width: 180px;">{{ user.trivia_percent }}% <small>({{ user.trivia_total }} answered)</small></div>
+  {% elif type == "messages" %}
+    <div class="level">{{ user.message_count | format }}</div>
+  {% elif type == "hosted" %}
+    <div class="level">{{ user.hosted_count | format }}</div>
+  {% elif type == "wins" %}
+    <div class="level">{{ user.won_count | format }}</div>
+  {% elif type == "streak" %}
+    <div class="level">{{ user.streak | format }}</div>
+  {% elif type == "mentions" %}
+    <div class="level">{{ user.mention_count | format }}</div>
+  {% elif type == "verifications" %}
+    <div class="level">{{ user.verifications | format }}</div>
+  {% else %}
+    <div class="level">Level {{ user.level }}</div>
+    <div class="xp">{{ user.xp_formatted }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+
+
+
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="{{ url_for('leaderboard', page=page-1, type=type) }}">⬅ Prev</a>
+  {% endif %}
+  {% if page < total_pages %}
+    <a href="{{ url_for('leaderboard', page=page+1, type=type) }}">Next ➡</a>
+  {% endif %}
+</div>
+
+
+{% include 'footer.html' %}
+
 <script>
 function toggleDarkMode() {
   const body = document.body;
@@ -215,7 +350,7 @@ function toggleDarkMode() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
+  const savedTheme = "dark";
   document.body.classList.remove("light", "dark");
   document.body.classList.add(savedTheme);
 

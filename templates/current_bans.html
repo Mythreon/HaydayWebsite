@@ -4,111 +4,171 @@
   <title>Current Bans - HayDay 🍀</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <style>
-    .ban-cards {
-      max-width: 1100px;
-      margin: 100px auto;
-      padding: 30px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-    }
+.ban-cards {
+  max-width: 1100px;
+  margin: 100px auto;
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
 
-    .ban-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      text-align: center;
-      transition: transform 0.2s ease;
-    }
+.ban-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
 
-    .ban-card:hover {
-      transform: scale(1.02);
-    }
+.ban-card:hover {
+  transform: scale(1.02);
+}
 
-    .ban-avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #eee;
-      margin-bottom: 10px;
-    }
+.ban-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+  margin-bottom: 10px;
+}
 
-    .ban-name {
-      font-weight: 600;
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
+.ban-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
 
-    .ban-id {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 10px;
-    }
+.ban-id {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+}
 
-    .ban-reason {
-      font-size: 14px;
-      line-height: 1.4;
-      margin-bottom: 12px;
-    }
+.ban-reason {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
 
-    .copy-id {
-      font-size: 12px;
-      padding: 4px 8px;
-      background: #ddd;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+.copy-id {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: #ddd;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-    .unban-button {
-      padding: 5px 10px;
-      background: #ff5a5a;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
+.unban-button {
+  padding: 5px 10px;
+  background: #ff5a5a;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    .unban-button:hover {
-      background: #ff3030;
-    }
+.unban-button:hover {
+  background: #ff3030;
+}
 
-    body.dark .ban-card { background: #2a2a2a; color: #eee; }
-    body.dark .ban-id { color: #aaa; }
-    body.dark .copy-id { background: #444; color: white; }
+body.dark .ban-card { background: #2a2a2a; color: #eee; }
+body.dark .ban-id { color: #aaa; }
+body.dark .copy-id { background: #444; color: white; }
 
-    .search-bar {
-      display: flex;
-      justify-content: center;
-      margin: 30px auto 0;
-      max-width: 600px;
-      gap: 10px;
-    }
+.search-bar {
+  display: flex;
+  justify-content: center;
+  margin: 30px auto 0;
+  max-width: 600px;
+  gap: 10px;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
 
-    .search-bar input {
-      flex: 1;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
+.search-bar input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
 
-    .pagination {
-      margin-top: 30px;
-      text-align: center;
-    }
+.pagination {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
 
-    .pagination a {
-      margin: 0 10px;
-      color: inherit;
-      font-weight: bold;
-    }
+.pagination a {
+  margin: 0 8px;
+  color: inherit;
+  font-weight: bold;
+  text-decoration: none;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.pagination input[type="number"] {
+  margin-top: 10px;
+  padding: 6px;
+  width: 70px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+@media (max-width: 600px) {
+  .ban-cards {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .ban-card {
+    padding: 16px;
+  }
+
+  .ban-name {
+    font-size: 15px;
+  }
+
+  .ban-reason {
+    font-size: 13px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 10px;
+  }
+
+  .search-bar input {
+    width: 100%;
+  }
+
+  .pagination {
+    font-size: 13px;
+  }
+
+  .pagination a {
+    margin: 4px;
+    padding: 5px 9px;
+  }
+
+  .pagination input[type="number"] {
+    width: 100%;
+    margin-top: 12px;
+  }
+}
+
   </style>
 </head>
 <body>

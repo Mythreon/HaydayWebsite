@@ -568,6 +568,71 @@ dialog.styled-modal::backdrop {
   backdrop-filter: blur(2px);
 }
 
+@media (max-width: 600px) {
+  .profile-container {
+    margin: 100px 10px 60px;
+    padding: 20px;
+  }
+
+  .avatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .discord-tag {
+    font-size: 18px;
+  }
+
+  .stats-section {
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px 16px;
+    font-size: 14px;
+    min-width: 100px;
+  }
+
+  .stat-card .value {
+    font-size: 20px;
+  }
+
+  .xp-bar {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .xp-text-overlay {
+    font-size: 13px;
+  }
+
+  .role-badge, .achievement-badge {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .featured-badge-floating {
+    top: 12px;
+    right: 12px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .bio-box {
+    font-size: 14px;
+    padding: 10px;
+    margin: 10px auto;
+  }
+
+  .simple-button {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .xp-rank {
+    font-size: 13px;
+  }
+}
 
   </style>
 </head>
@@ -760,7 +825,7 @@ function toggleDarkMode() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
+  const savedTheme = "dark";
   document.body.classList.remove("light", "dark");
   document.body.classList.add(savedTheme);
 

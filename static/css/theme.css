@@ -26,25 +26,22 @@ body.dark header {
 body.dark header a {
   color: #ddd;
 }
-
-body.light {
-  background-color: #f4f4f4;
-  color: #111;
+:root {
+  --bg-color: #ffffff;
+  --text-color: #111111;
+  --border-color: #dddddd;
+  --button-bg: #eeeeee;
+  --button-hover: #dddddd;
+  --button-text: #333333;
 }
 
-body.light a,
-body.light .theme-toggle,
-body.light .nav-button {
-  color: #111;
-}
-
-body.light .nav-button {
-  background-color: #4caf50;
-  color: white;
-}
-
-body.light .nav-button:hover {
-  background-color: #3e9141;
+body.dark {
+  --bg-color: #1e1e1e;
+  --text-color: #eeeeee;
+  --border-color: #444444;
+  --button-bg: #333333;
+  --button-hover: #444444;
+  --button-text: #eeeeee;
 }
 
 body.dark {
@@ -71,6 +68,15 @@ body.dark label {
   background-color: #1e1e1e;
   color: #eee;
   border: 1px solid #555;
+}
+
+label {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 

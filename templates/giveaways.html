@@ -11,13 +11,13 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   padding: 30px;
+  box-sizing: border-box;
 }
 
 .giveaway-card {
   background-color: #fff;
-  border-radius: 18px;
-  padding: 20px;
   border-radius: 14px;
+  padding: 20px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
   transition: all 0.3s ease;
 }
@@ -44,7 +44,6 @@ body.dark .giveaway-card {
   font-weight: 600;
   margin-right: 4px;
 }
-
 
 .countdown {
   font-weight: bold;
@@ -91,22 +90,24 @@ body.dark .giveaway-card {
   z-index: 9999;
   justify-content: center;
   align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .participants-modal.show {
   display: flex;
 }
 
-
 .modal-content {
   background: #1e1e1e;
   padding: 20px;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
-  width: 90%;
+  width: 100%;
   max-width: 500px;
   border-radius: 12px;
   color: #eee;
+  box-sizing: border-box;
 }
 
 .close-button {
@@ -150,9 +151,11 @@ body.dark .giveaway-card {
   background: #1e5e2e;
   border-radius: 6px;
 }
+
 body {
   font-family: 'Segoe UI', 'Inter', 'Roboto', sans-serif;
 }
+
 .verify-warning {
   background: #a32d2d;
   color: white;
@@ -162,10 +165,12 @@ body {
   margin-top: 10px;
   line-height: 1.4;
 }
+
 .verify-warning a {
   color: #fff;
   text-decoration: underline;
 }
+
 .refresh-btn {
   background: #d32f2f;
   color: white;
@@ -177,12 +182,79 @@ body {
   font-size: 0.85rem;
 }
 
+input[type="text"] {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2c2c2c;
+  color: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .giveaway-card {
+    padding: 16px;
+  }
+
+  .giveaway-card h3 {
+    font-size: 1rem;
+  }
+
+  .view-participants-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+  }
+
+  .participants-modal {
+    padding: 10px;
+  }
+
+  .modal-content {
+    padding: 15px;
+    max-height: 85vh;
+    font-size: 0.95rem;
+  }
+
+  .participant-row {
+    flex-direction: row;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .countdown {
+    font-size: 0.95rem;
+  }
+
+  .you-entered {
+    font-size: 0.75rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .verify-warning {
+    font-size: 0.85rem;
+  }
+}
+
+
   </style>
 </head>
 <body>
   {% include 'header.html' %}
-  <main style="padding-top: 80px; padding-bottom: 80px;">
-    <h1 style="text-align:center;">🎉 Ongoing Giveaways</h1>
+<main style="padding-top: 80px; padding-bottom: 80px;">
+
+{% if discord_id %}
+<section id="won-section" style="padding: 20px;">
+  <h2 style="text-align:center;">🏆 Recently Won Giveaways</h2>
+  <div id="won-giveaway-cards" class="giveaway-grid"></div>
+  <div id="won-pagination" style="text-align:center; margin-top: 10px;"></div>
+</section>
+{% endif %}
+
+
+  <h1 style="text-align:center;">🎉 Ongoing Giveaways</h1>
 
     <div class="giveaway-grid">
       {% for g in giveaways %}
@@ -284,6 +356,47 @@ body {
         });
       }
     });
+async function loadWonGiveaways(page = 1) {
+  const res = await fetch(`/api/giveaways/won?page=${page}`);
+  const data = await res.json();
+
+  const container = document.getElementById("won-giveaway-cards");
+  const pagination = document.getElementById("won-pagination");
+  container.innerHTML = "";
+  pagination.innerHTML = "";
+
+  if (Array.isArray(data.giveaways)) {
+    data.giveaways.forEach(g => {
+      const card = document.createElement("div");
+      card.className = "giveaway-card";
+      card.innerHTML = `
+        <h3>${g.prize}</h3>
+        <p><strong>Ended:</strong> ${new Date(g.end_time_ts * 1000).toLocaleString()}</p>
+        <p><strong>Message:</strong> <a href="https://discord.com/channels/${g.guild_id}/${g.channel_id}/${g.message_id}" target="_blank">View</a></p>
+      `;
+      container.appendChild(card);
+    });
+  } else {
+    container.innerHTML = `<p style="text-align:center;">No giveaways found.</p>`;
+  }
+
+
+  const totalPages = Math.ceil(data.total / data.limit);
+  if (totalPages > 1) {
+    if (page > 1) {
+      pagination.innerHTML += `<a class="refresh-btn" onclick="loadWonGiveaways(${page - 1})">⬅ Prev</a>`;
+    }
+    pagination.innerHTML += `<span style="margin: 0 10px;">Page ${page} of ${totalPages}</span>`;
+    if (page < totalPages) {
+      pagination.innerHTML += `<a class="refresh-btn" onclick="loadWonGiveaways(${page + 1})">Next ➡</a>`;
+    }
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  {% if discord_id %} loadWonGiveaways(); {% endif %}
+});
+     
   </script>
 </body>
 </html>
