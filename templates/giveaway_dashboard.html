@@ -81,6 +81,7 @@ body.dark .giveaway-box {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
@@ -199,11 +200,11 @@ button {
       <h2>Dashboard</h2>
       <a href="/dashboard">Bot Settings</a>
       <a href="/giveaway-dashboard">Giveaways</a>
-      <a href="/booster-dashboard">Boosters</a>
+      <!-- <a href="/booster-dashboard">Boosters</a> -->
       <a href="#">Verifications</a>
-      <a href="#">Auctions</a>
+      <a href="/auction-dashboard">Auctions</a>
       <a href="#">Moderation</a>
-      <a href="#">Starboard</a>
+      <a href="/starboard-dashboard">Starboard</a>
     </aside>
 
     <main class="dashboard-content">
@@ -319,12 +320,11 @@ button {
           box.className = "giveaway-box";
           box.innerHTML = `
             <strong>${g.prize}</strong><br>
-            🧍 ${g.winners} winner(s)<br>
-            🕒 Ended at ${g.ended_at}
-            <div class="giveaway-controls">
-              <button onclick="showRerollModal('${messageId}')">🔁 Reroll</button>
-            </div>
-          `;
+            🧍 ${g.winners} winners<br>
+            🆔 ID: ${g.message_id}<br>
+            🕓 Ended at ${g.ended_at}
+            <div class="giveaway-controls" id="controls-${g.message_id}"></div>
+          `;          
           endedContainer.appendChild(box);
         });
       }
@@ -410,11 +410,21 @@ button {
         box.innerHTML = `
           <strong>${g.prize}</strong><br>
           🧍 ${g.winners} winners<br>
-          🕓 Ended at ${g.ended_at}
-          <div class="giveaway-controls">
-            <button onclick="showRerollModal('${messageId}')">🔁 Reroll</button>
-          </div>
+          🆔 ID: ${g.message_id}<br>
+          🕓 Ended at ${g.ended_at}<br>
+          <img src="${g.host_avatar}" width="28" height="28" style="border-radius: 50%; vertical-align: middle; margin-top: 4px;"> 
+          Host: ${g.host_name}<br>
+          <div class="giveaway-controls" id="controls-${g.message_id}" style="margin-top: 8px;"></div>
         `;
+        const controls = box.querySelector(`#controls-${g.message_id}`);
+        if (Array.isArray(g.winner_buttons)) {
+          g.winner_buttons.forEach(winner => {
+            const btn = document.createElement("button");
+            btn.innerHTML = `🔁 Reroll ${winner.name}`;
+            btn.onclick = () => rerollWithUser(g.message_id, winner.id);
+            controls.appendChild(btn);
+          });
+        }
         container.appendChild(box);
       });
 

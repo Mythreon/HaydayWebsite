@@ -24,12 +24,27 @@ import nest_asyncio
 nest_asyncio.apply()
 import aiohttp
 import asyncio
-
+import traceback
+from livereload import Server
+import logging
+import redis
+from limits.storage import RedisStorage
+import logging
 load_dotenv()
+import flask_limiter
+print("[DEBUG] Flask-Limiter version:", flask_limiter.__version__)
 
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "changeme")
+
+app.config["RATELIMIT_STORAGE_URL"] = os.environ["REDIS_URL"]
+app.config["RATELIMIT_DEFAULTS"] = ["50 per minute"]
+
+limiter = Limiter(
+    key_func=get_remote_address
+)
+limiter.init_app(app)
 
 # Discord
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
@@ -47,8 +62,6 @@ STAFF_ROLES = {
     1251737546770088028: "Giveaway Staff",
 }
 
-# Rate limiting
-limiter = Limiter(get_remote_address, app=app, default_limits=["50 per minute"])
 
 # CSRF protection
 csrf = CSRFProtect(app)
@@ -221,7 +234,28 @@ def calculate_achievements(xp, message_count, coins, streak, auctions_won=0, top
     return achievements
 
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    user_ip = request.remote_addr
+    now = datetime.utcnow().isoformat()
 
+    log_message = f"[RateLimit] {now} - Too many requests from {user_ip} on {request.path}"
+
+    print(log_message)  # log to Fly logs
+
+    # OPTIONAL: Save to MongoDB
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        client["Website"]["Logs"].insert_one({
+            "type": "ratelimit",
+            "ip": user_ip,
+            "path": request.path,
+            "timestamp": now
+        })
+
+    return jsonify({
+        "error": "Too many requests, slow down.",
+        "retry_after": e.description
+    }), 429
 
 
 @app.template_filter('format')
@@ -258,7 +292,6 @@ def send_reply():
     })
     return redirect("/active-tickets")
 
-from datetime import datetime, timezone
 
 @app.route("/admin")
 def admin_panel():
@@ -565,24 +598,43 @@ def won_giveaways():
         return jsonify({"error": "Not logged in"}), 401
 
     page = int(request.args.get("page", 1))
-    limit = 6
+    limit = 4
     skip = (page - 1) * limit
-
     discord_id = session["discord_id"]
 
     with MongoClient(os.getenv("MONGO_URI")) as client:
-        db = client["Giveaway"]
-        col = db["ended_giveaways"]
+        col = client["Giveaway"]["current_giveaways"]
 
-        total = col.count_documents({"winners": discord_id})
-        recent = list(col.find({"winners": discord_id})
-                      .sort("end_time_ts", -1)
+        query = {
+            "ended": True,
+            "winners": {"$in": [discord_id]}
+        }
+
+        total = col.count_documents(query)
+        recent = list(col.find(query)
+                      .sort("end_time", -1)
                       .skip(skip)
                       .limit(limit))
+
+        usernames_col = client["Website"]["usernames"]
 
         for g in recent:
             g["_id"] = str(g["_id"])
             g["you_won"] = True
+
+            # Timestamp fix
+            end_time = g.get("end_time")
+            if isinstance(end_time, datetime):
+                g["end_time_ts"] = int(end_time.timestamp())
+            else:
+                g["end_time_ts"] = 0
+
+            # Host display/avatars
+            host_id = g.get("host_id")
+            if host_id:
+                profile = usernames_col.find_one({"_id": str(host_id)})
+                g["host_display"] = profile.get("display_name", "Unknown") if profile else "Unknown"
+                g["host_avatar"] = profile.get("avatar_url", "") if profile else ""
 
     return jsonify({
         "giveaways": recent,
@@ -590,6 +642,8 @@ def won_giveaways():
         "total": total,
         "limit": limit
     })
+
+
 
 
 
@@ -1061,7 +1115,6 @@ def mod_action():
 
 @app.route("/api/news")
 def api_news():
-    from pymongo import MongoClient
     mongo_uri = os.getenv("MONGO_URI")
     with MongoClient(mongo_uri) as client:
         collection = client["hayday"]["NewsFeed"]
@@ -1228,8 +1281,6 @@ def export_logs():
 def view_logs():
     if not is_staff():
         return "Unauthorized", 403
-
-    from datetime import timezone
     year = datetime.now(timezone.utc).year
     now = datetime.now(timezone.utc)
 
@@ -1677,7 +1728,6 @@ def callback():
 
         return redirect(next_page)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return f"<h1>❌ Error:</h1><pre>{e}</pre>", 500
 
@@ -2130,15 +2180,18 @@ def starboard_data():
         starboard_entries = list(
             col.find({"starboard_message_id": {"$exists": True}})
             .sort("star_count", -1)
-            .limit(25)
         )
 
         for entry in starboard_entries:
             entry["_id"] = str(entry["_id"])
-            # Optional: Cast MongoDB int fields to plain int if needed
             entry["star_count"] = int(entry.get("star_count", 0))
             entry["original_message_id"] = str(entry.get("original_message_id", ""))
             entry["starboard_message_id"] = str(entry.get("starboard_message_id", ""))
+
+            # ✅ Add these two lines:
+            entry["guild_id"] = str(entry.get("guild_id", ""))
+            entry["channel_id"] = str(entry.get("channel_id", ""))
+
 
     return jsonify({
         "settings": {
@@ -2176,6 +2229,413 @@ def starboard_dashboard():
     return render_template("starboard_dashboard.html", year=datetime.now().year)
 
 
+@app.route("/auction-dashboard")
+def auction_dashboard():
+    if "discord_id" not in session:
+        return redirect("/login-page")
+    if not is_staff():
+        return "Unauthorized", 403
+
+    def fix_ids(doc):
+        if isinstance(doc, list):
+            return [fix_ids(x) for x in doc]
+        if isinstance(doc, dict):
+            new_doc = {}
+            for k, v in doc.items():
+                if isinstance(v, (ObjectId, int)) and k in {"_id", "message_id", "channel_id", "owner_id", "highest_bidder"}:
+                    new_doc[k] = str(v)
+                else:
+                    new_doc[k] = fix_ids(v)
+            return new_doc
+        return doc
+
+    active_page = int(request.args.get("active_page", 1))
+    ended_page = int(request.args.get("ended_page", 1))
+    log_page = int(request.args.get("log_page", 1))
+    ban_page = int(request.args.get("ban_page", 1))
+    limit = 12
+
+    skip_active = (active_page - 1) * limit
+    skip_ended = (ended_page - 1) * limit
+    skip_logs = (log_page - 1) * limit
+    skip_bans = (ban_page - 1) * limit
+
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        db = client["hayday"]
+        user_col = client["Website"]["usernames"]
+        log_col = client["Website"]["Logs"]
+
+        active_auctions_all = list(db["auctions"].find({"status": "active"}))
+        active_auctions_json = fix_ids(active_auctions_all)
+        active_auctions = active_auctions_all[skip_active : skip_active + limit]
+
+        ended_auctions = list(
+            db["auctions"].find({"status": {"$in": ["ended", "no_bids"]}})
+            .sort("end_time", -1)
+            .skip(skip_ended).limit(limit)
+        )
+        logs = list(
+            log_col.find({"type": {"$regex": "^auction_"}})
+            .sort("timestamp", -1)
+            .skip(skip_logs).limit(limit)
+        )
+        AUCTION_BANNED_ROLE_ID = 1379087489779630121
+        banned_users = list(
+            user_col.find({"roles": AUCTION_BANNED_ROLE_ID})
+            .skip(skip_bans).limit(limit)
+        )
+
+        # Count total documents
+        active_total = db["auctions"].count_documents({"status": "active"})
+        ended_total = db["auctions"].count_documents({"status": {"$in": ["ended", "no_bids"]}})
+        log_total = log_col.count_documents({"type": {"$regex": "^auction_"}})
+        ban_total = user_col.count_documents({"roles": AUCTION_BANNED_ROLE_ID})
+
+        active_total_pages = max((active_total + limit - 1) // limit, 1)
+        ended_total_pages = max((ended_total + limit - 1) // limit, 1)
+        log_total_pages = max((log_total + limit - 1) // limit, 1)
+        ban_total_pages = max((ban_total + limit - 1) // limit, 1)
+
+        # 🧠 Collect all user IDs
+        user_ids = set()
+        for auc in active_auctions + ended_auctions:
+            user_ids.add(str(auc.get("owner_id")))
+            user_ids.add(str(auc.get("highest_bidder")))
+        for log in logs:
+            if "author" in log and "id" in log["author"]:
+                user_ids.add(str(log["author"]["id"]))
+        for user in banned_users:
+            user_ids.add(user["_id"])
+
+        profiles = list(user_col.find({"_id": {"$in": list(user_ids)}}))
+        user_map = {u["_id"]: u for u in profiles}
+
+        for auc in active_auctions + ended_auctions:
+            auc["owner_info"] = user_map.get(str(auc.get("owner_id")), {})
+            auc["bidder_info"] = user_map.get(str(auc.get("highest_bidder")), {})
+        for log in logs:
+            author_id = str(log.get("author", {}).get("id"))
+            log["author_info"] = user_map.get(author_id, {})
+        for user in banned_users:
+            user["display_name"] = user.get("display_name", user.get("username", "Unknown"))
+
+    return render_template(
+        "auction_dashboard.html",
+        active_auctions=active_auctions,
+        active_auctions_json=active_auctions_json,
+        ended_auctions=ended_auctions,
+        logs=logs,
+        banned_users=banned_users,
+        active_page=active_page,
+        ended_page=ended_page,
+        log_page=log_page,
+        ban_page=ban_page,
+        active_total_pages=active_total_pages,
+        ended_total_pages=ended_total_pages,
+        log_total_pages=log_total_pages,
+        ban_total_pages=ban_total_pages,
+        year=datetime.now().year
+    )
+
+@csrf.exempt
+@app.route("/api/auction/cancel", methods=["POST"])
+def cancel_auction():
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+
+    message_id = request.form.get("message_id")
+    reason = request.form.get("reason") or "No reason provided."
+
+    if not message_id:
+        return "Missing message_id", 400
+
+    # Update auction status to 'cancelled'
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        col = client["hayday"]["auctions"]
+        auction = col.find_one({"message_id": int(message_id)})
+        if not auction:
+            return "Auction not found", 404
+
+        col.update_one({"_id": auction["_id"]}, {"$set": {"status": "cancelled"}})
+
+    # Notify bot to delete the Discord message and log
+    requests.post(
+        os.getenv("BOT_WEBHOOK_URL") + "/webhook/cancel-auction",
+        json={
+            "message_id": message_id,
+            "reason": reason,
+        },
+        headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+    )
+
+    return redirect("/auction-dashboard")
+
+
+@csrf.exempt
+@app.route("/api/auction/<message_id>/bids")
+def get_auction_bids(message_id):
+    if not is_staff():
+        return "Unauthorized", 403
+
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        auction = client["hayday"]["auctions"].find_one({"message_id": int(message_id)})
+        if not auction or "bid_logs" not in auction:
+            return jsonify([])
+
+        user_col = client["Website"]["usernames"]
+
+        output = []
+        user_ids = [str(bid["user_id"]) for bid in auction["bid_logs"]]
+        user_map = {
+            u["_id"]: u for u in user_col.find({"_id": {"$in": user_ids}})
+        }
+
+        for bid in auction["bid_logs"]:
+            output.append({
+                "user_display": user_map.get(str(bid["user_id"]), {}).get("display_name", str(bid["user_id"])),
+                "user_id": str(bid["user_id"]),  # ← change from int() to str()
+                "amount": bid["amount"],
+                "timestamp": bid["timestamp"],
+            })
+
+
+        print("FINAL BIDS RETURNED:", output)
+
+        return jsonify(output)
+
+    
+@csrf.exempt
+@app.route("/api/auction/edit", methods=["POST"])
+def edit_auction():
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+
+    def safe_int(val):
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return None
+
+    try:
+        data = request.form.to_dict()
+        message_id = int(data.get("message_id"))
+
+        with MongoClient(os.getenv("MONGO_URI")) as client:
+            col = client["hayday"]["auctions"]
+            existing = col.find_one({"message_id": message_id})
+            if not existing:
+                return "Auction not found", 404
+
+            update_fields = {}
+            for k, v in data.items():
+                if k == "message_id":
+                    continue
+                if k in ("quantity", "current_bid", "min_increment"):
+                    parsed = safe_int(v)
+                    if parsed is not None:
+                        update_fields[k] = parsed
+                else:
+                    update_fields[k] = v
+
+            image_url = data.get("image_url", "").strip()
+            if not image_url and "image_url" in existing:
+                image_url = existing["image_url"]
+            update_fields["image_url"] = image_url
+
+            col.update_one({"message_id": message_id}, {"$set": update_fields})
+
+        # Notify bot
+        requests.post(
+            os.getenv("BOT_WEBHOOK_URL") + "/webhook/refresh-auction",
+            json={"message_id": message_id},
+            headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+        )
+        print("[EDIT] Sent webhook for:", message_id)
+        return redirect("/auction-dashboard")
+
+    except Exception as e:
+        return f"Error: {e}", 500
+    
+@csrf.exempt   
+@app.route("/api/auction/remove-buyout", methods=["POST"])
+def remove_buyout():
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+        
+    message_id = request.form.get("message_id")
+
+    if not message_id:
+        return "Missing message_id", 400
+
+    with MongoClient("MONGO_URI") as client:
+        col = client["Auction"]["auctions"]
+        result = col.update_one(
+            {"message_id": int(message_id)},
+            {"$unset": {"buyout_offer": ""}}
+        )
+        print(f"[BUYOUT REMOVE] message_id={message_id} matched={result.matched_count} modified={result.modified_count}")
+
+    # Optionally trigger embed update via webhook
+    try:
+        requests.post(
+            f"{os.getenv('WEBHOOK_BASE_URL')}/webhook/refresh-auction",
+            headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")},
+            json={"message_id": message_id}
+        )
+    except Exception as e:
+        print(f"[WARN] Failed to refresh embed: {e}")
+
+    return redirect("/auction-dashboard")
+
+@csrf.exempt
+@app.route("/api/auction/remove-image", methods=["POST"])
+def remove_auction_image():
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+        
+    message_id = request.form.get("message_id")
+
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        db = client["hayday"]["auctions"]
+        result = db.update_one(
+            {"message_id": int(message_id)},
+            {"$unset": {"image_url": ""}}
+        )
+        print(f"[REMOVE-IMAGE] Result: matched={result.matched_count} modified={result.modified_count}")
+
+    # Optional: refresh bot embed
+    try:
+        requests.post(
+            f"{os.getenv('BOT_WEBHOOK_URL')}/webhook/refresh-auction",
+            headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")},
+            json={"message_id": message_id}
+        )
+    except Exception as e:
+        print("Failed to refresh embed:", e)
+
+    return redirect("/auction-dashboard")
+
+
+@csrf.exempt
+@app.route("/api/auction/end", methods=["POST"])
+def end_auction_now():
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+
+    message_id = request.form.get("message_id")
+    if not message_id:
+        return "Missing message_id", 400
+
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        col = client["hayday"]["auctions"]
+        auction = col.find_one({"message_id": int(message_id)})
+        if not auction:
+            return "Auction not found", 404
+
+        # Force end by making it expired
+        col.update_one({"_id": auction["_id"]}, {
+            "$set": {"end_time": datetime.utcnow() - timedelta(seconds=1)}
+        })
+
+    # Trigger full auction end logic via bot webhook
+    requests.post(
+        os.getenv("BOT_WEBHOOK_URL") + "/webhook/end-auction",
+        json={"message_id": message_id},
+        headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+    )
+
+    return redirect("/auction-dashboard")
+
+
+@csrf.exempt
+@app.route("/api/auction/<message_id>/remove-bid", methods=["POST"])
+def remove_auction_bid(message_id):
+    if "discord_id" not in session or not is_staff():
+        return "Unauthorized", 403
+
+    user_id = request.form.get("user_id")
+    print("[REMOVE BID] Raw user_id from form:", user_id)
+
+    if not user_id:
+        return "Missing user_id", 400
+
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        return "Invalid user_id format", 400
+
+    print("[REMOVE BID] Target user_id to remove (int):", user_id_int)
+
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        auctions = client["hayday"]["auctions"]
+        auction = auctions.find_one({"message_id": int(message_id)})
+
+        if not auction:
+            print("[REMOVE BID] ❌ Auction not found.")
+            return "Auction not found", 404
+
+        bid_logs = auction.get("bid_logs", [])
+        print(f"[REMOVE BID] Found {len(bid_logs)} bids before removal")
+
+        for bid in bid_logs:
+            print(f"[COMPARE] bid.user_id={bid['user_id']} (type: {type(bid['user_id'])}) vs {user_id_int} (type: {type(user_id_int)})")
+
+        updated_logs = [bid for bid in bid_logs if str(bid["user_id"]) != str(user_id_int)]
+        for bid in bid_logs:
+            print(f"[CHECK] str({bid['user_id']}) = {str(bid['user_id'])}, form = {str(user_id_int)}")
+
+
+        print(f"[REMOVE BID] Bids after removal: {len(updated_logs)}")
+
+        if len(updated_logs) == len(bid_logs):
+            print("[REMOVE BID] ⚠ No bid found for this user_id — nothing removed")
+
+        # Recalculate highest bid
+        if updated_logs:
+            updated_logs.sort(key=lambda x: x["timestamp"])
+            last = updated_logs[-1]
+            current_bid = last["amount"]
+            highest_bidder = last["user_id"]
+        else:
+            current_bid = auction.get("starting_bid", 0)
+            highest_bidder = None
+
+        result = auctions.update_one(
+            {"message_id": int(message_id)},
+            {"$set": {
+                "bid_logs": updated_logs,
+                "current_bid": current_bid,
+                "highest_bidder": highest_bidder
+            }}
+        )
+
+        print(f"[REMOVE BID] Mongo matched: {result.matched_count}, modified: {result.modified_count}")
+        print(f"[REMOVE BID] New highest_bidder: {highest_bidder}, current_bid: {current_bid}")
+
+    # Trigger refresh
+    refresh_resp = requests.post(
+        os.getenv("BOT_WEBHOOK_URL") + "/webhook/refresh-auction",
+        json={"message_id": message_id},
+        headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+    )
+
+    print(f"[REMOVE BID] Webhook refresh response: {refresh_resp.status_code}")
+    return redirect("/auction-dashboard")
+
+
+
+@app.route("/webhook/refresh-auction", methods=["POST"])
+def refresh_auction_webhook():
+    if request.headers.get("X-Webhook-Secret") != os.getenv("BOT_WEBHOOK_KEY"):
+        return "Forbidden", 403
+
+    data = request.get_json()
+    message_id = data.get("message_id")
+
+    # TODO: Optionally add logic to notify the bot or update cache, etc.
+    print(f"[Webhook] Refresh auction triggered for message ID: {message_id}")
+
+    return "OK", 200
 
 @app.route("/admin/refund", methods=["POST"])
 @csrf.exempt
@@ -2402,8 +2862,8 @@ def get_giveaways():
     })
 
 
-@csrf.exempt
 @app.route("/api/giveaways/recent", methods=["GET"])
+@csrf.exempt
 def recent_giveaways():
     if "discord_id" not in session:
         return jsonify([])
@@ -2413,17 +2873,48 @@ def recent_giveaways():
 
     with MongoClient(os.getenv("MONGO_URI")) as client:
         db = client["Giveaway"]
-        results = []
+        userdb = client["Website"]["usernames"]
 
-        for g in db["current_giveaways"].find({"ended": True}).sort("end_time", -1).skip(skip).limit(limit):
+        ended = list(db["current_giveaways"]
+                     .find({"ended": True})
+                     .sort("end_time", -1)
+                     .skip(skip)
+                     .limit(limit))
+
+        # Collect host + winner IDs
+        host_ids = [str(g.get("host_id")) for g in ended if g.get("host_id")]
+        winner_ids = [str(uid) for g in ended for uid in g.get("winners", [])]
+
+        # Fetch profiles in one batch
+        user_profiles = userdb.find({"_id": {"$in": list(set(host_ids + winner_ids))}})
+        user_map = {u["_id"]: u for u in user_profiles}
+
+        results = []
+        for g in ended:
+            host_id = str(g.get("host_id"))
+            host = user_map.get(host_id, {})
+            
+            winner_buttons = []
+            for uid in g.get("winners", []):
+                u = user_map.get(str(uid))
+                winner_buttons.append({
+                    "id": str(uid),
+                    "name": u.get("display_name") or u.get("username") if u else f"User {uid}"
+                })
+
             results.append({
                 "prize": g.get("prize", "N/A"),
                 "winners": g.get("winners_count", 1),
                 "message_id": str(g.get("message_id")),
-                "ended_at": g.get("end_time").strftime("%Y-%m-%d %H:%M")
+                "ended_at": g.get("end_time").strftime("%Y-%m-%d %H:%M"),
+                "host_name": host.get("display_name", f"<@{host_id}>"),
+                "host_avatar": host.get("avatar", "https://cdn.discordapp.com/embed/avatars/0.png"),
+                "winner_buttons": winner_buttons,
             })
 
     return jsonify(results)
+
+
 
 @csrf.exempt
 @app.route("/api/giveaways/end/<message_id>", methods=["POST"])
@@ -2692,15 +3183,11 @@ def reroll_giveaway_post():
 
 
 if __name__ == "__main__":
-    import os
-
     port = int(os.environ.get("PORT", 8080))
     env = os.getenv("FLASK_ENV", "prod")
 
     if env == "dev":
         # Local dev with livereload
-        from livereload import Server
-        import logging
 
         logging.getLogger("livereload").setLevel(logging.WARNING)
 

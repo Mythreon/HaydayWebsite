@@ -4,7 +4,8 @@ requests
 pymongo[srv]
 motor
 Flask-WTF
-Flask-Limiter
+flask-limiter
+redis
 python-dotenv
 nest_asyncio
 httpx
@@ -12,3 +13,4 @@ aiohttp
 pytz
 pytesseract
 Pillow
+livereload

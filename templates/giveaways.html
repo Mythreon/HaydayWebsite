@@ -174,14 +174,20 @@ body {
 .refresh-btn {
   background: #d32f2f;
   color: white;
-  padding: 4px 10px;
+  padding: 6px 14px;
   border-radius: 8px;
   text-decoration: none;
   display: inline-block;
-  margin-top: 6px;
-  font-size: 0.85rem;
+  margin: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
-
+.refresh-btn:hover {
+  background: #b72b2b;
+  transform: scale(1.03);
+}
 input[type="text"] {
   padding: 6px;
   border-radius: 6px;
@@ -371,9 +377,14 @@ async function loadWonGiveaways(page = 1) {
       card.className = "giveaway-card";
       card.innerHTML = `
         <h3>${g.prize}</h3>
+        <p style="display:flex; align-items:center; gap:8px;">
+          ${g.host_avatar ? `<img src="${g.host_avatar}" style="width:24px; height:24px; border-radius:50%;">` : ""}
+          <strong>Host:</strong> ${g.host_display || "Unknown"}
+        </p>
         <p><strong>Ended:</strong> ${new Date(g.end_time_ts * 1000).toLocaleString()}</p>
         <p><strong>Message:</strong> <a href="https://discord.com/channels/${g.guild_id}/${g.channel_id}/${g.message_id}" target="_blank">View</a></p>
       `;
+
       container.appendChild(card);
     });
   } else {
