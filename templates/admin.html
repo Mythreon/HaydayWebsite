@@ -1,105 +1,393 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Panel - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <title>Admin Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f4f4;
-    }
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  margin-top: 60px;
+}
 
-    .admin-wrapper {
-      max-width: 800px;
-      margin: 120px auto 60px;
-      padding: 30px;
-      border-radius: 16px;
-      background: white;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      box-sizing: border-box;
-    }
+.sidebar {
+  width: 240px;
+  background-color: #222;
+  color: white;
+  padding: 20px;
+  font-family: sans-serif;
+}
 
-    .admin-wrapper h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.8rem;
-    }
+.sidebar h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
 
-    .admin-wrapper ul {
-      list-style: none;
-      padding: 0;
-      font-size: 1rem;
-    }
+.sidebar a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
 
-    .admin-wrapper li {
-      margin: 12px 0;
-    }
+.sidebar a:hover {
+  background-color: #333;
+}
 
-    .admin-wrapper a {
-      text-decoration: none;
-      color: #4caf50;
-      font-weight: 600;
-      display: block;
-      padding: 10px 15px;
-      border-radius: 8px;
-      transition: background 0.2s;
-    }
+.dashboard-content {
+  flex-grow: 1;
+  padding: 40px;
+  background-color: #f4f4f4;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+body.dark .dashboard-content {
+  background-color: #1e1e1e;
+}
 
-    .admin-wrapper a:hover {
-      background: #f0f0f0;
-    }
+.card {
+  background: #1f1f1f;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+}
+.card h3 {
+  margin-bottom: 16px;
+  font-size: 16px;
+}
 
-    body.dark .admin-wrapper {
-      background: #1e1e1e;
-      color: #eee;
-    }
+.card .log-entry {
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background: #2a2a2a;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+.log-entry {
+  font-size: 13px;
+}
 
-    body.dark .admin-wrapper a {
-      color: #90ee90;
-    }
 
-    body.dark .admin-wrapper a:hover {
-      background: #2a2a2a;
-    }
+body.dark .card {
+  background: #1f1f1f;
+  color: white;
+}
 
-    @media (max-width: 600px) {
-      .admin-wrapper {
-        margin: 100px 15px 40px;
-        padding: 20px;
-      }
 
-      .admin-wrapper h1 {
-        font-size: 1.5rem;
-      }
+.toggle-row {
+  display: grid;
+  grid-template-columns: 180px 140px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
 
-      .admin-wrapper ul {
-        font-size: 0.95rem;
-      }
-    }
+.toggle-row label {
+  font-weight: bold;
+}
+
+.toggle-row select,
+.toggle-row input[type="text"],
+#prefix-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.dark .toggle-row select,
+body.dark .toggle-row input[type="text"],
+body.dark #prefix-input {
+  background-color: #1e1e1e;
+  color: #eee;
+  border: 1px solid #444;
+}
+
+button {
+  margin-top: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #4caf50;
+  color: white;
+}
+
+button:hover {
+  background-color: #3e9141;
+}
+
+#save-status {
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .sidebar a {
+    display: inline-block;
+    margin: 6px;
+    font-size: 15px;
+  }
+
+  .dashboard-content {
+    padding: 20px;
+  }
+
+  .toggle-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .card {
+  padding: 16px;
+  margin: 12px;
+  }
+}
+
+.grid-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  margin-inline: auto;
+}
+
+
+.card {
+  background: #1f1f1f;
+  padding: 20px;
+  font-size: 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+
   </style>
 </head>
 <body>
-
   {% include 'header.html' %}
 
-  <div class="admin-wrapper">
-    <h1>🛠️ Admin Panel</h1>
-    <p style="text-align:center;">Logged in as: <strong>{{ role }}</strong></p>
+  <div class="dashboard-wrapper">
+    <aside class="sidebar">
+      <h2>Dashboard</h2>
+      <a href="/dashboard">Bot Settings</a>
+      <a href="/giveaway-dashboard">Giveaways</a>
+      <a href="/booster-dashboard">Boosters</a>
+      <a href="/admin">Admin Panel</a>
+      <a href="#">Verifications</a>
+      <a href="/auction_dashboard">Auctions</a>
+      <a href="#">Moderation</a>
+      <a href="#">Starboard</a>
+    </aside>
 
-    <ul>
-      <li><a href="/admin/users">📋 View All Users</a></li>
-      <li><a href="/admin/bios">📝 Moderate Bios</a></li>
-      <li><a href="/admin/purchases">🧾 View Shop Log</a></li>
-      <!--<li><a href="/consent-log">🧾 View Consent Logs</a></li> -->
-      <li><a href="/admin/lookup">🔎 Lookup User ID</a></li>
-      <li><a href="/admin/logs">📜 View Discord Logs</a></li>
-      <li><a href="/admin/production">🛠️ Manage Production</a></li>
-    </ul>
+    <main class="dashboard-content">
+      <h1>🛠 Admin Panel</h1>
+
+      <div class="card" style="max-width: 600px;">
+        <input type="text" id="lookupInput" placeholder="Enter Discord ID or Hay Day ID..." style="padding: 10px; width: 100%; margin-bottom: 10px;" />
+        <button onclick="performLookup()">🔍 Search</button>
+      </div>
+
+      <div id="results" class="results-grid"></div>
+    </main>
   </div>
 
   {% include 'footer.html' %}
+
+  <script>
+  function createCard(title, contentHTML) {
+    return `
+      <div class="card">
+        <h3 style="margin-bottom: 12px; font-size: 18px; color: #ddd;">${title}</h3>
+        ${contentHTML || "<p style='color: gray;'>No data</p>"}
+      </div>
+    `;
+  }
+
+
+
+  function renderLogList(logs, keysToShow = []) {
+    if (!logs?.length) return "<p style='color: gray;'>No logs available.</p>";
+
+    return logs.map(log => {
+      const fields = keysToShow.length
+        ? keysToShow.map(k => `<strong>${k}:</strong> ${truncate(log[k])}`)
+        : Object.entries(log).map(([k, v]) => `<strong>${k}:</strong> ${truncate(v)}`);
+      
+      return `<div class="log-entry">${fields.join("<br>")}</div>`;
+    }).join("");
+  }
+
+
+  function truncate(text, limit = 250) {
+    if (!text) return "";
+    return typeof text === "string" && text.length > limit ? text.slice(0, limit) + "…" : text;
+  }
+
+    function renderLinkedData(entry) {
+      if (!entry) return "<p style='color: gray;'>No data</p>";
+      return `
+        <div><strong>Discord ID:</strong> ${entry._id}</div>
+        <div><strong>Hay Day ID:</strong> ${entry.hay_day_id}</div>
+        <div><strong>IP:</strong> ${entry.ip}</div>
+        <div><strong>Fingerprint:</strong> ${entry.fingerprint}</div>
+        <div><strong>User Agent:</strong> ${entry.user_agent?.slice(0, 100)}...</div>
+        <div><strong>Submitted:</strong> ${new Date(entry.submitted_at).toLocaleString()}</div>
+      `;
+    }
+  function renderUserSummary(summary) {
+    if (!summary) return "<p style='color: gray;'>No summary available</p>";
+    return `
+      <div><strong>User ID:</strong> ${summary.user_id}</div>
+      <div><strong>Mentions:</strong> ${summary.mention_count}</div>
+      <div><strong>Birthday:</strong> ${summary.birthday || "Not set"}</div>
+      <div><strong>Banned:</strong> ${summary.banned || "❌ Not banned"}</div>
+    `;
+  }
+  function renderScamRecords(records) {
+    if (!records?.length) return "<p style='color: gray;'>No scam records found.</p>";
+
+    return records.map((rec, i) => {
+      const scamIDs = (rec.id || []).join(", ");
+      const staffTag = rec.Staff ? `<@${rec.Staff}>` : "Unknown";
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <strong>Scam ID(s):</strong> ${scamIDs}<br>
+          <strong>Added by:</strong> ${staffTag}<br>
+          <div style="margin-top: 8px;">
+            <button onclick="scamAction('${scamIDs}', 'add')">➕ Add to Scam List</button>
+            <button onclick="scamAction('${scamIDs}', 'mute')">🔇 Mute</button>
+            <button onclick="scamAction('${scamIDs}', 'ban')">🔨 Ban</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+function renderVerificationEntries(entries) {
+  if (!entries || !entries.length) return "<p style='color: gray;'>No verification attempts found.</p>";
+
+  return entries.map(entry => {
+    const content = entry["Message content"] || "";
+    const idMatch = content.match(/HayDay ID:\s*([#A-Z0-9]+)/i);
+    const nameMatch = content.match(/Farm Name:\s*(.+)/i);
+    const levelMatch = content.match(/level:\s*(\d+)/i);
+
+    const haydayId = idMatch ? idMatch[1] : "Unknown";
+    const farmName = nameMatch ? nameMatch[1] : "Unknown";
+    const level = levelMatch ? levelMatch[1] : "Unknown";
+
+    const submitted = entry.submitted_at ? new Date(entry.submitted_at).toLocaleString() : "Unknown";
+    const screenshot = entry.screenshot_url;
+    const status = entry.status;
+
+    return `
+      <div class="card" style="margin-bottom: 16px; padding: 16px;">
+        <strong>Hay Day ID:</strong> ${haydayId}<br>
+        <strong>Farm Name:</strong> ${farmName}<br>
+        <strong>Level:</strong> ${level}<br>
+        <strong>Status:</strong> <span style="color: ${status === 'approve' ? 'lime' : status === 'pending' ? 'gold' : 'red'}">${status}</span>
+        <strong>Submitted:</strong> ${submitted}<br>
+        ${screenshot ? `
+          <div style="margin-top: 8px;">
+            <img src="${screenshot}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" />
+          </div>` : ""}
+        <div style="margin-top: 10px;">
+          <button onclick="scamAction('${haydayId}', 'add')">➕ Add to Scam List</button>
+          <button onclick="scamAction('${haydayId}', 'mute')">🔇 Mute</button>
+          <button onclick="scamAction('${haydayId}', 'ban')">🔨 Ban</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+function renderCommands(commands) {
+  if (!commands || !commands.length) return "<p style='color: gray;'>No commands used.</p>";
+
+  return commands
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))  // newest first
+    .map(cmd => {
+      const date = new Date(cmd.timestamp).toLocaleString();
+      return `
+        <div style="margin-bottom: 10px;">
+          <strong>Command:</strong> ${cmd.command}<br>
+          <strong>Time:</strong> ${date}<br>
+          <strong>Used in:</strong> ${cmd.channel_id}
+        </div>
+      `;
+    }).join("");
+}
+
+
+function scamAction(id, action) {
+  alert(`Requested action: ${action} for ID: ${id}`);
+  // TODO: Replace this with a POST request to /api/admin/scam-action
+}
+
+    async function performLookup() {
+      const id = document.getElementById("lookupInput").value.trim();
+      if (!id) return alert("Enter a valid ID");
+
+      const res = await fetch(`/api/admin-lookup/${id}`);
+      const data = await res.json();
+
+      const container = document.getElementById("results");
+      container.innerHTML = "";
+
+      if (data.error) {
+        container.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
+        return;
+      }
+
+    container.innerHTML = `
+      <div class="grid-results">
+        ${createCard("👤 User Summary", renderUserSummary(data.user_summary))}
+        ${createCard("🧾 Verification Attempts", renderVerificationEntries(data.linked_data))}
+        ${createCard("✏ Message Edits", renderLogList(data.messages_edited, ["before", "after", "timestamp"]))}
+        ${createCard("🗑 Message Deletes", renderLogList(data.messages_deleted, ["content", "timestamp"]))}
+        ${createCard("⌨ Commands", renderCommands(data.commands))}
+        ${createCard("📛 Name Changes", renderLogList(data.name_history, ["before", "after", "timestamp"]))}
+      </div>
+    `;
+
+
+    }
+  </script>
 </body>
 </html>

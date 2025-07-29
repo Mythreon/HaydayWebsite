@@ -31,9 +31,6 @@
         {% if session.get("discord_id") %}
           <a href="#">Profile ▾</a>
           <ul class="dropdown-content">
-            {% if session.get("staff_role") %}
-              <li><a href="/admin">Admin</a></li>
-            {% endif %}
             <li><a href="/profile">My Profile</a></li>
             <li class="{% if request.path.startswith('/profile-directory') %}active{% endif %}"><a href="/profile-directory">Members</a></li>
             <li><a href="/shop">Shop</a></li>

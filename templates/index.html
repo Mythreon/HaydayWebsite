@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>HayDay 🍀</title>
-  <meta name="google-site-verification" content="XytNN-ofO92AjDuNxZaJNX_4ItyUMYsHj1pgQ4B-Hp4" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% extends "base.html" %}
+
+{% block title %}HayDay 🍀 — Home{% endblock %}
+
+{% block head_extra %}
   <style>
     html, body {
       margin: 0;
@@ -192,50 +188,36 @@
 }
 
   </style>
-</head>
-<body class="light">
+{% endblock %}
 
-  <div class="background-blur"></div>
-  <div class="overlay"></div>
+{% block content %}
+<section class="hero">
+  <h1>🌾 Welcome to HayDay 🍀</h1>
+  <p>Your trusted community hub for auctions and giveaways.</p>
+</section>
 
-  {% include 'header.html' %}
-
-  <main>
-    <section class="hero">
-      <h1>🌾 Welcome to HayDay 🍀</h1>
-      <p>Your trusted community hub for auctions and giveaways.</p>
-    </section>
-
-    <section class="widget-grid">
-      <div class="widget giveaway-widget">
-        <h2>🎁 Latest Giveaways</h2>
-        <div id="giveaway-feed" class="giveaway-scroll"></div>
-        <a href="/giveaways" class="giveaway-footer">🔗 View all giveaways</a>
-      </div>
-        <div class="widget giveaway-widget">
-          <h2>📦 Latest Auctions</h2>
-          <div id="auction-feed" class="giveaway-scroll"></div>
-          <a href="/auctions" class="giveaway-footer">🔗 View all auctions</a>
-        </div>
-      <div class="widget giveaway-widget">
-        <h2>📰 Latest HayDay News</h2>
-        <div id="news-feed" class="giveaway-scroll">
-          <p>Loading latest news...</p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  {% include 'footer.html' %}
-
-  <div id="privacyModal" class="modal-overlay" onclick="overlayClick(event)">
-    <div class="modal-content" id="privacyContentWrapper">
-      <button class="close-button" onclick="closePrivacyModal()">✖</button>
-      <div id="privacyContent">
-        <p>Loading privacy policy...</p>
-      </div>
+<section class="widget-grid">
+  <div class="widget giveaway-widget">
+    <h2>🎁 Latest Giveaways</h2>
+    <div id="giveaway-feed" class="giveaway-scroll"></div>
+    <a href="/giveaways" class="giveaway-footer">🔗 View all giveaways</a>
+  </div>
+  <div class="widget giveaway-widget">
+    <h2>📦 Latest Auctions</h2>
+    <div id="auction-feed" class="giveaway-scroll"></div>
+    <a href="/auctions" class="giveaway-footer">🔗 View all auctions</a>
+  </div>
+  <div class="widget giveaway-widget">
+    <h2>📰 Latest HayDay News</h2>
+    <div id="news-feed" class="giveaway-scroll">
+      <p>Loading latest news...</p>
     </div>
   </div>
+</section>
+{% endblock %}
+
+
+{% block scripts %}
 <script>
 function formatDate(isoString) {
   const date = new Date(isoString);
@@ -403,8 +385,4 @@ fetch("/api/live-auctions")
     document.getElementById("auction-feed").innerHTML = "<p>Failed to load auctions.</p>";
   });
 </script>
-
-
-
-</body>
-</html>
+{% endblock %}

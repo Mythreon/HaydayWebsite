@@ -645,9 +645,7 @@ function toggleBids(messageId, btn) {
     fetch(`/api/auction/${messageId}/bids?v=${Date.now()}`)
       .then(res => res.json())
       .then(data => {
-        console.log("Fetched bids:", data);
         container.innerHTML = data.map(bid => {
-          console.log("Rendering bid with user_id:", bid.user_id);
           return `
             <div>
                 <span>${bid.user_display} - ${bid.amount.toLocaleString()}</span>

@@ -50,7 +50,10 @@ body.dark .giveaway-card {
   color: #ff9800;
 }
 
+
 .you-entered {
+  opacity: 1;
+  transition: opacity 0.3s ease;
   display: inline-block;
   background: #2e7d32;
   color: white;
@@ -59,7 +62,9 @@ body.dark .giveaway-card {
   font-size: 0.8rem;
   margin-top: 6px;
 }
-
+.you-entered.show {
+  opacity: 1;
+}
 .giveaway-card details {
   margin-top: 10px;
 }
@@ -243,6 +248,29 @@ input[type="text"] {
     font-size: 0.85rem;
   }
 }
+.giveaway-card form {
+  background: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  display: block;
+}
+
+.giveaway-card form label {
+  margin-top: 10px;
+  display: block;
+  font-size: 0.9rem;
+  color: inherit;
+}
+
+.giveaway-card input[type="checkbox"] {
+  margin-right: 6px;
+  transform: scale(1.1);
+  vertical-align: middle;
+}
+
+
 
 
   </style>
@@ -260,86 +288,103 @@ input[type="text"] {
 {% endif %}
 
 
-  <h1 style="text-align:center;">🎉 Ongoing Giveaways</h1>
+<h1 style="text-align:center;">🎉 Ongoing Giveaways</h1>
 
-    <div class="giveaway-grid">
-      {% for g in giveaways %}
-      <div class="giveaway-card">
-        <h3>{{ g.prize }}</h3>
-            <p style="display: flex; align-items: center; gap: 10px;">
-            {% if g.host_avatar %}
-            <img src="{{ g.host_avatar }}" alt="avatar" style="width: 26px; height: 26px; border-radius: 50%;">
+<div class="giveaway-grid">
+  {% for g in giveaways %}
+  <div class="giveaway-card">
+    <h3>{{ g.prize }}</h3>
+    <p style="display: flex; align-items: center; gap: 10px;">
+      {% if g.host_avatar %}
+      <img src="{{ g.host_avatar }}" alt="avatar" style="width: 26px; height: 26px; border-radius: 50%;">
+      {% endif %}
+      <strong>Host:</strong> {{ g.host_display }}
+    </p>
+    <p><strong>Ends:</strong> <span class="countdown" data-end="{{ g.end_time_ts }}"></span></p>
+    <p><strong>Winners:</strong> {{ g.winners }}</p>
+    <p><strong>Entries:</strong> <span class="entry-count" data-msgid="{{ g.message_id }}">{{ g.entry_count }}</span></p>
+    {% if g.required_role_name %}
+    <p><strong>Required Role:</strong> <span style="color: #ff6666;">{{ g.required_role_name }}</span></p>
+    {% endif %}
+    <p><strong>Link:</strong> <a href="https://discord.com/channels/{{ g.guild_id }}/{{ g.channel_id }}/{{ g.message_id }}" target="_blank">Jump to Giveaway</a></p>
+
+    <!-- ✅ FORM WRAPPER -->
+    <div class="giveaway-action-wrapper" data-msgid="{{ g.message_id }}" data-has-bypass="{{ '1' if g.has_bypass else '0' }}">
+      {% if discord_id in g.participants %}
+        <div class="you-entered">You’ve joined! ({{ g.participants[discord_id] }} entries)</div>
+        <form class="leave-form" style="margin-top: 10px;">
+          <input type="hidden" name="message_id" value="{{ g.message_id }}">
+          <button type="submit" class="view-participants-btn" style="background-color: #d32f2f;">❌ Leave Giveaway</button>
+        </form>
+
+      {% elif g.not_in_guild %}
+        <div class="you-entered" style="background-color: #a32d2d;">
+          🔒 Please <a href="https://discord.gg/haydayy" target="_blank" style="color: white; text-decoration: underline;">join our Discord server</a> to join giveaways.<br>
+          <small>If you just joined, <a href="/logout?next=/login?next=/giveaways" style="color: white; text-decoration: underline;">↻ refresh login</a>.</small>
+        </div>
+
+      {% elif not g.can_join %}
+        <div class="you-entered" style="background-color: #a32d2d;">❌ Not eligible to join this giveaway</div>
+
+      {% else %}
+        <form class="join-form" data-msgid="{{ g.message_id }}" data-has-bypass="{{ '1' if g.has_bypass else '0' }}" style="margin-top: 10px;">
+          <input type="hidden" name="message_id" value="{{ g.message_id }}">
+
+          {% if g.has_bypass %}
+          <label style="display:block; margin-top: 8px;">
+            <input type="checkbox" required id="confirm-{{ g.message_id }}">
+            I confirm I’ve read the giveaway title and understand all additional requirements.
+          </label>
+          {% endif %}
+
+          <button type="submit"
+                  class="view-participants-btn"
+                  style="background-color: #4caf50;">
+            🎉 Join Giveaway
+          </button>
+        </form>
+      {% endif %}
+    </div>
+    <!-- ✅ END WRAPPER -->
+
+    <button onclick="openParticipantsModal({{ loop.index0 }})" class="view-participants-btn">🔍 View Entry Stats & Participants</button>
+
+    <div class="participants-modal" id="modal-{{ loop.index0 }}">
+      <div class="modal-content">
+        <button class="close-button" onclick="closeParticipantsModal({{ loop.index0 }})">✖</button>
+        <h3>🎉 Participants</h3>
+
+        <!-- Search Input -->
+        <input id="search-input-{{ loop.index0 }}"
+               oninput="loadParticipantPage({{ loop.index0 }}, 1)"
+               placeholder="🔍 Search name..."
+               style="width: 100%; padding: 6px; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #2c2c2c; color: white;">
+
+        <!-- Participant List -->
+        <div class="participant-list" id="participant-list-{{ loop.index0 }}">
+          {% for p in g.participant_info %}
+          <div class="participant-row{% if p.id == discord_id %} me{% endif %}"
+               data-name="{{ p.name | lower }}"
+               data-entries="{{ p.count }}"
+               style="display: none;">
+            {% if p.avatar %}
+            <img src="{{ p.avatar }}" class="avatar">
             {% endif %}
-            <strong>Host:</strong> {{ g.host_display }}
-            </p>
-        <p><strong>Ends:</strong> <span class="countdown" data-end="{{ g.end_time_ts }}"></span></p>
-        <p><strong>Winners:</strong> {{ g.winners }}</p>
-        <p><strong>Entries:</strong> {{ g.entry_count }}</p>
-        {% if g.required_role_name %}
-        <p><strong>Required Role:</strong> <span style="color: #ff6666;">{{ g.required_role_name }}</span></p>
-        {% endif %}
-        <p><strong>Link:</strong> <a href="https://discord.com/channels/{{ g.guild_id }}/{{ g.channel_id }}/{{ g.message_id }}" target="_blank">Jump to Giveaway</a></p>
-
-        {% if discord_id in g.participants %}
-          <div class="you-entered">You are entered! ({{ g.participants[discord_id] }} entries)</div>
-          <form action="/giveaway/leave" method="POST" style="margin-top: 10px;">
-            <input type="hidden" name="message_id" value="{{ g.message_id }}">
-            <button type="submit" class="view-participants-btn" style="background-color: #d32f2f;">❌ Leave Giveaway</button>
-          </form>
-          {% elif g.not_in_guild %}
-            <div class="you-entered" style="background-color: #a32d2d;">
-              🔒 Please <a href="https://discord.gg/haydayy" target="_blank" style="color: white; text-decoration: underline;">join our Discord server</a> to join giveaways.<br>
-              <small>If you just joined, <a href="/logout?next=/login?next=/giveaways" style="color: white; text-decoration: underline;">↻ refresh login</a>.</small>
+            <div>
+              <div class="name">{{ p.name }}</div>
+              <div class="entries">{{ p.count }} entries ({{ p.percent }}%)</div>
             </div>
-          {% elif not g.can_join %}
-            <div class="you-entered" style="background-color: #a32d2d;">❌ Not eligible to join this giveaway</div>
-        {% else %}
-          <form action="/giveaway/join" method="POST" style="margin-top: 10px;">
-            <input type="hidden" name="message_id" value="{{ g.message_id }}">
-            <button type="submit" class="view-participants-btn" style="background-color: #4caf50;">
-              🎉 Join Giveaway{% if g.has_bypass %} (read the title){% endif %}
-            </button>
-          </form>
-        {% endif %}
+          </div>
+          {% endfor %}
+        </div>
 
-        <button onclick="openParticipantsModal({{ loop.index0 }})" class="view-participants-btn">📋 View Participants and Win %</button>
-
-        <div class="participants-modal" id="modal-{{ loop.index0 }}">
-            <div class="modal-content">
-            <button class="close-button" onclick="closeParticipantsModal({{ loop.index0 }})">✖</button>
-            <h3>🎉 Participants</h3>
-
-            <!-- Search Input -->
-            <input id="search-input-{{ loop.index0 }}"
-                    oninput="loadParticipantPage({{ loop.index0 }}, 1)"
-                    placeholder="🔍 Search name..."
-                    style="width: 100%; padding: 6px; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #2c2c2c; color: white;">
-
-            <!-- Participant List -->
-            <div class="participant-list" id="participant-list-{{ loop.index0 }}">
-                {% for p in g.participant_info %}
-                <div class="participant-row{% if p.id == discord_id %} me{% endif %}"
-                    data-name="{{ p.name | lower }}"
-                    data-entries="{{ p.count }}"
-                    style="display: none;">
-                {% if p.avatar %}
-                <img src="{{ p.avatar }}" class="avatar">
-                {% endif %}
-                <div>
-                    <div class="name">{{ p.name }}</div>
-                    <div class="entries">{{ p.count }} entries ({{ p.percent }}%)</div>
-                </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Pagination -->
-            <div id="pagination-{{ loop.index0 }}" style="text-align:center; margin-top: 10px;"></div>
-          </div> <!-- modal-content -->
-        </div> <!-- participants-modal -->
-      </div> <!-- giveaway-card -->
-      {% endfor %}
-    </div> <!-- giveaway-grid -->
+        <!-- Pagination -->
+        <div id="pagination-{{ loop.index0 }}" style="text-align:center; margin-top: 10px;"></div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
   </main>
   {% include 'footer.html' %}
@@ -407,7 +452,141 @@ async function loadWonGiveaways(page = 1) {
 window.addEventListener("DOMContentLoaded", () => {
   {% if discord_id %} loadWonGiveaways(); {% endif %}
 });
-     
+
+  function checkConfirm(messageId) {
+  const checkbox = document.getElementById(`confirm-${messageId}`);
+  if (!checkbox || checkbox.checked) return true;
+  alert("❗ Please confirm you’ve read the giveaway title and understand the extra requirements.");
+  return false;
+}
+
+function bindJoinForms() {
+  document.querySelectorAll('.join-form').forEach(form => {
+    if (form.dataset.bound) return;
+    form.dataset.bound = "1";
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const msgId = form.dataset.msgid;
+      const hasBypass = form.dataset.hasBypass === "1";
+      const checkbox = document.getElementById(`confirm-${msgId}`);
+
+      if (hasBypass && checkbox && !checkbox.checked) {
+        alert("❗ Please confirm you’ve read the giveaway title.");
+        return;
+      }
+
+      const formData = new FormData(form);
+
+      try {
+        const submitButton = form.querySelector("button[type=submit]");
+        submitButton.disabled = true;
+        submitButton.textContent = "Joining...";
+
+        const res = await fetch('/giveaway/join', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        submitButton.disabled = false;
+        submitButton.textContent = "🎉 Join Giveaway"; // or restore original label
+
+
+        if (res.ok) {
+          const entryCountSpan = document.querySelector(`.entry-count[data-msgid="${msgId}"]`);
+          if (entryCountSpan) {
+            const current = parseInt(entryCountSpan.textContent) || 0;
+            entryCountSpan.textContent = current + 1;
+          }
+
+          // replace the entire wrapper element, not just inside the form
+          const wrapper = form.closest(".giveaway-action-wrapper");
+          wrapper.innerHTML = `
+            <div class="you-entered">✅ You’ve joined!</div>
+            <form class="leave-form" style="margin-top: 10px;">
+              <input type="hidden" name="message_id" value="${msgId}">
+              <button type="submit" class="view-participants-btn" style="background-color: #d32f2f;">
+                ❌ Leave Giveaway
+              </button>
+            </form>
+          `;
+          bindLeaveForms(); // ✅ bind new leave-form
+        } else {
+          form.innerHTML = `<div style="color:red;">❌ Failed to join. Try again.</div>`;
+        }
+      } catch {
+        form.innerHTML = `<div style="color:red;">❌ Network error. Please retry.</div>`;
+      }
+    });
+  });
+}
+
+
+function bindLeaveForms() {
+  document.querySelectorAll('.leave-form').forEach(form => {
+    if (form.dataset.bound) return;
+    form.dataset.bound = "1";
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const msgId = formData.get("message_id");
+
+      try {
+        const res = await fetch('/giveaway/leave', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const data = await res.json(); // ✅ Parse response body
+
+        if (res.ok && data.success) {
+          const entryCountSpan = document.querySelector(`.entry-count[data-msgid="${msgId}"]`);
+          if (entryCountSpan) {
+            const current = parseInt(entryCountSpan.textContent) || 1;
+            entryCountSpan.textContent = Math.max(current - 1, 0);
+          }
+
+          const wrapper = form.closest(".giveaway-action-wrapper");
+          const hasBypass = wrapper?.dataset.hasBypass === "1"; // ✅ Assign correctly
+
+          wrapper.innerHTML = `
+            <form class="join-form" data-msgid="${msgId}" data-has-bypass="${hasBypass ? '1' : '0'}" style="margin-top: 10px;">
+              <input type="hidden" name="message_id" value="${msgId}">
+              ${hasBypass ? `
+                <label style="display:block; margin-top: 8px;">
+                  <input type="checkbox" id="confirm-${msgId}">
+                  I confirm I’ve read the giveaway title and understand all additional requirements.
+                </label>` : ""}
+              <button type="submit" class="view-participants-btn" style="background-color: #4caf50;">
+                🎉 Join Giveaway
+              </button>
+            </form>
+          `;
+          bindJoinForms();
+        } else {
+          form.innerHTML = `<div style="color:red;">❌ Failed to leave. Try again.</div>`;
+        }
+      } catch (err) {
+        console.error("Leave error:", err); // Optional: debug
+        form.innerHTML = `<div style="color:red;">❌ Network error. Please retry.</div>`;
+      }
+    });
+  });
+}
+
+
+bindJoinForms();
+bindLeaveForms();
+
+
   </script>
 </body>
 </html>

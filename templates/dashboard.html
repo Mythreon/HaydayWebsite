@@ -152,6 +152,7 @@ button:hover {
       <a href="/dashboard">Bot Settings</a>
       <a href="/giveaway-dashboard">Giveaways</a>
       <!-- <a href="/booster-dashboard">Boosters</a> -->
+      <a href="/admin">Admin Panel</a>
       <a href="#">Verifications</a>
       <a href="/auction-dashboard">Auctions</a>
       <a href="#">Moderation</a>
@@ -164,19 +165,42 @@ button:hover {
         <p>This is your new HayDay 🍀 bot dashboard.</p>
       </div>
 
-      {% if session.get('discord_id') == '154282062973501441' %}
-        <div class="card">
-          <h3>Admin Tools</h3>
-          <form method="POST" action="/force-logout" onsubmit="return confirm('Are you sure you want to force logout all users?');">
-            <button type="submit" style="background:#e74c3c;">🚨 Force Logout All</button>
-          </form>
-        </div>
-      {% endif %}
+    {% if session.get('discord_id') == '154282062973501441' %}
+      <div class="card">
+        <h3>Admin Tools</h3>
+        <form method="POST" action="/force-logout" onsubmit="return confirm('Are you sure you want to force logout all users?');" style="display:inline-block; margin-right: 20px;">
+          <button type="submit" style="background:#e74c3c;">🚨 Force Logout All</button>
+        </form>
+        <a href="/admin/interactions" style="background:#4caf50; color:white; padding:10px 16px; border-radius:6px; text-decoration:none;">📋 View Logs</a>
+      </div>
+    {% endif %}
 
       <div class="card">
         <h3>🔒 Toggle Feature Buttons</h3>
         <div id="button-settings"></div>
       </div>
+
+    <div class="card">
+      <h3>🎟️ Ticket Role Settings</h3>
+      {% for type in ticket_types %}
+        <div class="toggle-row">
+          <label>{{ type }}</label>
+          <select onchange="updateSupportRole('{{ type }}', this.value)">
+            {% for role in roles %}
+              <option value="{{ role.id }}" {% if support_settings[type] == role.id %}selected{% endif %}>
+                {{ role.name }}
+              </option>
+            {% endfor %}
+          </select>
+          <div></div> <!-- Empty column to match the 3-column layout -->
+        </div>
+      {% endfor %}
+    </div>
+
+
+
+
+
 
       <div class="card">
         <h3>Custom Prefix</h3>
@@ -271,6 +295,23 @@ function updateSetting(event, key) {
       row.appendChild(select);
       row.appendChild(reasonInput);
       container.appendChild(row);
+    });
+  }
+
+  function updateSupportRole(ticketType, roleId) {
+    fetch("/dashboard/update-support-role", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({ ticket_type: ticketType, role_id: roleId })
+    }).then(res => {
+      if (!res.ok) {
+        console.error(`Failed to update role for ${ticketType}`);
+      }
+    }).catch(err => {
+      console.error("Network error:", err);
     });
   }
 
