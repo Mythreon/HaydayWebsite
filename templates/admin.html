@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}Admin Panel{% endblock %}
+
+{% block head_extra %}
   <style>
 .dashboard-wrapper {
   display: flex;
@@ -196,13 +193,193 @@ button:hover {
   margin-top: 20px;
   align-items: start;
 }
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.result-row {
+  background: #1f1f1f;
+  border: 1px solid #333;
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+}
+
+.result-row .row-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #7abfff;
+}
+
+.result-row .row-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.wide-card {
+  background: #1f1f1f;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  padding: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.card-header {
+  font-weight: bold;
+  font-size: 16px;
+  min-width: 180px;
+  color: #7abfff;
+}
+
+.card-body {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.log-row {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.log-row:hover {
+  background-color: #2a2a2a;
+}
+.log-row div {
+  margin-bottom: 4px;
+}
+.log-row .log-full {
+  display: none;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #555;
+  font-size: 13px;
+  color: #bbb;
+}
+.log-row.expanded .log-full {
+  display: block;
+}
+.card-body table {
+  font-size: 13px;
+  color: #ccc;
+}
+
+.card-body th, .card-body td {
+  border-bottom: 1px solid #333;
+  padding: 6px;
+}
+
+.card-body th {
+  color: #7abfff;
+  font-weight: 600;
+}
+
+.pagination {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #aaa;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #1f1f1f;
+  padding: 20px;
+  border-radius: 8px;
+  color: white;
+}
+.modal-content input {
+  display: block;
+  margin-bottom: 12px;
+  padding: 8px;
+  width: 100%;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+}
+.admin-panel-card {
+  background-color: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 40px;
+  margin-inline: auto;
+  margin-top: 100px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  text-align: center;
+  max-width: 520px;
+  width: 90%;
+}
+
+.admin-title {
+  font-size: 26px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.admin-subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.search-bar-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.search-bar-wrapper input {
+  flex: 1;
+  min-width: 240px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background-color: #111;
+  color: #fff;
+  font-size: 15px;
+}
+
+.search-bar-wrapper button {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.search-bar-wrapper button:hover {
+  background-color: #3e9141;
+}
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="dashboard-wrapper">
     <aside class="sidebar">
       <h2>Dashboard</h2>
@@ -217,20 +394,223 @@ button:hover {
     </aside>
 
     <main class="dashboard-content">
-      <h1>🛠 Admin Panel</h1>
-
-      <div class="card" style="max-width: 600px;">
-        <input type="text" id="lookupInput" placeholder="Enter Discord ID or Hay Day ID..." style="padding: 10px; width: 100%; margin-bottom: 10px;" />
-        <button onclick="performLookup()">🔍 Search</button>
+    <div class="admin-panel-card">
+      <h1 class="admin-title">🛠 Admin Panel</h1>
+      <p class="admin-subtitle">Search for a user using Discord ID </p>
+      <div class="search-bar-wrapper">
+        <input type="text" id="lookupInput" placeholder="🔍 Enter Discord ID..." />
+        <button onclick="performLookup()">Search</button>
       </div>
+    </div>
+
 
       <div id="results" class="results-grid"></div>
     </main>
   </div>
 
-  {% include 'footer.html' %}
+<div id="muteModal" style="display: none;" class="modal-overlay">
+  <div class="modal-content">
+    <h3>🔇 Mute User</h3>
+    <input id="muteDuration" placeholder="e.g. 1h or 30m">
+    <input id="muteReason" placeholder="Reason (optional)">
+    <button onclick="confirmMute()">✅ Confirm</button>
+    <button onclick="closeMuteModal()">❌ Cancel</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const CURRENT_USER_ID_FROM_SESSION = "{{ session['discord_id'] }}";
+</script>
 
   <script>
+let muteUserId = null;
+
+function scamAction(id, action) {
+  if (action === "mute") {
+    muteUserId = id;
+    document.getElementById("muteModal").style.display = "flex";
+    return;
+  }
+
+  const actionLabels = {
+    "ban": "Are you sure you want to ban this user?",
+    "unban": "Unban this user?",
+    "unmute": "Unmute this user?"
+  };
+
+  let reason = "Actioned via admin panel";
+  if (action === "ban" || action === "unban") {
+    reason = prompt(action === "ban" ? "Enter reason for ban:" : "Enter reason for unban:", "No reason provided");
+    if (!reason) return; // Cancelled or empty
+  }
+  if (action === "unmute") {
+    reason = prompt("Enter reason for unmute:", "No reason provided");
+    if (!reason) return;
+  }
+
+
+  if (action === "ban" || action === "unban") {
+    // Ban API
+    fetch("/api/moderation/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: id,
+        action: action,
+        reason: reason,
+        staff_id: CURRENT_USER_ID_FROM_SESSION
+      })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        alert(`✅ ${action === "ban" ? "Banned" : "Unbanned"} successfully.`);
+        performLookup(); // Refresh user info
+      } else {
+        alert("❌ Error: " + (result.error || "Unknown error"));
+      }
+    })
+    .catch(err => {
+      console.error("Ban/Unban error:", err);
+      alert("❌ Network or server error.");
+    });
+  }
+
+  if (action === "unmute") {
+    // Mute API with unmute mode
+    fetch("/api/moderation/mute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: id,
+        action: "unmute",
+        reason: "Unmuted via admin panel",
+        staff_id: CURRENT_USER_ID_FROM_SESSION
+      })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        alert("✅ Unmuted successfully.");
+        performLookup(); // Refresh user info
+      } else {
+        alert("❌ Error: " + (result.error || "Unknown error"));
+      }
+    })
+    .catch(err => {
+      console.error("Unmute error:", err);
+      alert("❌ Network or server error.");
+    });
+  }
+  if (action === "kick") {
+    const reason = prompt("Enter reason for kick:", "No reason provided");
+    if (!reason) return;
+
+    fetch("/api/moderation/kick", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: id,
+        reason,
+        staff_id: CURRENT_USER_ID_FROM_SESSION
+      })
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        alert("✅ Kicked successfully.");
+        performLookup();
+      } else {
+        alert("❌ Error: " + (result.error || "Unknown error"));
+      }
+    })
+    .catch(err => {
+      console.error("Kick error:", err);
+      alert("❌ Network or server error.");
+    });
+  }
+}
+
+
+
+function closeMuteModal() {
+  const modal = document.getElementById("muteModal");
+  modal.style.display = "none";
+  modal.querySelector(".modal-content").innerHTML = originalMuteModalHTML;
+  document.getElementById("muteDuration").value = "";
+  document.getElementById("muteReason").value = "";
+  muteUserId = null;
+}
+
+
+async function confirmMute() {
+  const duration = document.getElementById("muteDuration").value.trim();
+  const reason = document.getElementById("muteReason").value.trim();
+
+  if (!duration) {
+    alert("Please provide a duration.");
+    return;
+  }
+
+  const res = await fetch("/api/moderation/mute", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: muteUserId,
+      duration,
+      reason,
+      staff_id: CURRENT_USER_ID_FROM_SESSION
+    })
+  });
+
+  const result = await res.json();
+  if (result.success) {
+    const modal = document.getElementById("muteModal");
+    modal.querySelector(".modal-content").innerHTML = `
+      <p style="color: lime;">✅ Mute submitted. Bot will apply it shortly.</p>
+    `;
+    setTimeout(closeMuteModal, 1500);
+  } else {
+    alert(`❌ Error: ${result.error}`);
+  }
+}
+
+
+let currentPages = {
+  edits: 1,
+  deletes: 1,
+  names: 1
+};
+let cachedData = null;
+
+function changeLogPage(type, page) {
+  if (!cachedData) return;
+
+  currentPages[type] = page;
+  updateCardSection(type);
+}
+
+function updateCardSection(type) {
+  if (!cachedData) return;
+
+  const container = document.querySelector(`.card-body-${type}`);
+  if (!container) return;
+
+  let html = "";
+  if (type === "edits")
+    html = renderLogList(cachedData.messages_edited, ["before", "after", "timestamp"], currentPages.edits, 10, "edits");
+  if (type === "deletes")
+    html = renderLogList(cachedData.messages_deleted, ["content", "timestamp"], currentPages.deletes, 10, "deletes");
+  if (type === "names")
+    html = renderLogList(cachedData.name_history, ["before", "after", "timestamp"], currentPages.names, 10, "names");
+
+  container.innerHTML = html;
+}
+
+
   function createCard(title, contentHTML) {
     return `
       <div class="card">
@@ -242,17 +622,57 @@ button:hover {
 
 
 
-  function renderLogList(logs, keysToShow = []) {
-    if (!logs?.length) return "<p style='color: gray;'>No logs available.</p>";
+function renderLogList(logs, keysToShow = [], page = 1, perPage = 10, type = "edits") {
+  if (!logs?.length) return "<p style='color: gray;'>No logs available.</p>";
 
-    return logs.map(log => {
-      const fields = keysToShow.length
-        ? keysToShow.map(k => `<strong>${k}:</strong> ${truncate(log[k])}`)
-        : Object.entries(log).map(([k, v]) => `<strong>${k}:</strong> ${truncate(v)}`);
-      
-      return `<div class="log-entry">${fields.join("<br>")}</div>`;
-    }).join("");
-  }
+  // ✅ Sort newest first
+  logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  const start = (page - 1) * perPage;
+  const paginated = logs.slice(start, start + perPage);
+  const totalPages = Math.ceil(logs.length / perPage);
+
+  const headers = keysToShow.length ? keysToShow : Object.keys(paginated[0] || {});
+  const headerRow = headers.map(h => `<th style="text-align:left; padding: 6px;">${h}</th>`).join("");
+
+  const rows = paginated.map(log => {
+    return `<tr>${headers.map(k => {
+      let val = log[k];
+
+      // ✅ Format timestamp
+      if (k === "timestamp" && val) {
+        const d = new Date(val);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        val = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+      }
+
+      return `<td style="padding: 6px;">${truncate(val)}</td>`;
+    }).join("")}</tr>`;
+  }).join("");
+
+  const nav = totalPages > 1
+    ? `<div class="pagination">
+        Page ${page} of ${totalPages}
+        <button onclick="changeLogPage('${type}', ${page - 1})" ${page === 1 ? 'disabled' : ''}>◀</button>
+        <button onclick="changeLogPage('${type}', ${page + 1})" ${page === totalPages ? 'disabled' : ''}>▶</button>
+      </div>`
+    : "";
+
+  return `
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead><tr style="border-bottom: 1px solid #555;">${headerRow}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${nav}
+  `;
+}
+
+
+
 
 
   function truncate(text, limit = 250) {
@@ -271,15 +691,61 @@ button:hover {
         <div><strong>Submitted:</strong> ${new Date(entry.submitted_at).toLocaleString()}</div>
       `;
     }
-  function renderUserSummary(summary) {
-    if (!summary) return "<p style='color: gray;'>No summary available</p>";
-    return `
-      <div><strong>User ID:</strong> ${summary.user_id}</div>
-      <div><strong>Mentions:</strong> ${summary.mention_count}</div>
-      <div><strong>Birthday:</strong> ${summary.birthday || "Not set"}</div>
-      <div><strong>Banned:</strong> ${summary.banned || "❌ Not banned"}</div>
-    `;
-  }
+
+function renderUserSummary(summary) {
+  if (!summary) return "<p style='color: gray;'>No summary available</p>";
+
+  const avatar = summary.avatar_url
+    ? `<img src="${summary.avatar_url}" alt="avatar" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #333;">`
+    : "";
+
+  const muteButton = summary.muted
+    ? `<button onclick="if(confirm('Are you sure you want to unmute this user?')) scamAction('${summary.user_id}', 'unmute')">🔓 Unmute</button>`
+    : `<button onclick="scamAction('${summary.user_id}', 'mute')">🔇 Mute</button>`;
+
+  const banButton = summary.banned
+    ? `<button onclick="scamAction('${summary.user_id}', 'unban')">♻️ Unban</button>`
+    : `<button onclick="scamAction('${summary.user_id}', 'ban')">🔨 Ban</button>`
+
+  return `
+    <div style="display: flex; flex-direction: row; gap: 24px;">
+      <div style="min-width: 100px;">${avatar}</div>
+      <div style="flex: 1;">
+        <div><strong>Display Name:</strong> ${summary.display_name || "N/A"}</div>
+        <div><strong>Username:</strong> ${summary.username || "N/A"}</div>
+        <div><strong>User ID:</strong> 
+          <a href="https://discord.com/users/${summary.user_id}" target="_blank" style="color: #7abfff;">
+            ${summary.user_id}
+          </a>
+        </div>
+        <div><strong>Mentions:</strong> ${summary.mention_count}</div>
+        <div><strong>Birthday:</strong> ${summary.birthday || "Not set"}</div>
+        <div><strong>Banned:</strong> ${summary.banned ? "✅ Banned" : "❌ Not banned"}</div>
+        ${summary.banned && summary.ban_reason ? `<div style="color: gray; font-size: 13px;">📄 Reason: ${summary.ban_reason}</div>` : ''}
+        <div><strong>Muted:</strong> ${summary.muted ? "✅ Muted" : "❌ Not muted"}</div>
+        <div><strong>Mute Count:</strong> ${summary.mute_count > 0 ? summary.mute_count : "Never muted"}</div>
+        ${summary.muted ? `
+          <div style="color: gray; font-size: 13px; margin-top: 6px;">
+            ⏱️ Until: ${new Date(summary.mute_end).toLocaleDateString("en-GB")}<br>
+            📄 Reason: ${summary.mute_reason || "No reason provided"}
+          </div>` : summary.mute_end ? `
+          <div style="color: gray; font-size: 13px; margin-top: 6px;">
+            ⏱️ Mute expired on: ${new Date(summary.mute_end).toLocaleDateString("en-GB")}<br>
+            📄 Reason was: ${summary.mute_reason || "No reason provided"}
+          </div>` : ''}
+        <div style="margin-top: 10px;">
+          ${muteButton}
+          ${banButton}
+          <button onclick="scamAction('${summary.user_id}', 'kick')">👢 Kick</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+
+
   function renderScamRecords(records) {
     if (!records?.length) return "<p style='color: gray;'>No scam records found.</p>";
 
@@ -300,43 +766,97 @@ button:hover {
       `;
     }).join("");
   }
+
+
 function renderVerificationEntries(entries) {
-  if (!entries || !entries.length) return "<p style='color: gray;'>No verification attempts found.</p>";
+  if (!entries || !entries.length)
+    return "<p style='color: gray;'>No verification attempts found.</p>";
 
-  return entries.map(entry => {
-    const content = entry["Message content"] || "";
-    const idMatch = content.match(/HayDay ID:\s*([#A-Z0-9]+)/i);
-    const nameMatch = content.match(/Farm Name:\s*(.+)/i);
-    const levelMatch = content.match(/level:\s*(\d+)/i);
+  return `
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid #555;">
+          <th style="text-align: left; padding: 6px;">Hay Day ID</th>
+          <th style="text-align: left; padding: 6px;">Farm Name</th>
+          <th style="text-align: left; padding: 6px;">Level</th>
+          <th style="text-align: left; padding: 6px;">Status</th>
+          <th style="text-align: left; padding: 6px;">Submitted</th>
+          <th style="text-align: left; padding: 6px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${entries.map(entry => {
+          const content = entry["Message content"] || "";
+          const idMatch = content.match(/HayDay ID:\s*([#A-Z0-9]+)/i);
+          const nameMatch = content.match(/Farm Name:\s*(.+)/i);
+          const levelMatch = content.match(/level:\s*(\d+)/i);
 
-    const haydayId = idMatch ? idMatch[1] : "Unknown";
-    const farmName = nameMatch ? nameMatch[1] : "Unknown";
-    const level = levelMatch ? levelMatch[1] : "Unknown";
+          const haydayId = idMatch ? idMatch[1] : "Unknown";
+          const farmName = nameMatch ? nameMatch[1] : "Unknown";
+          const level = levelMatch ? levelMatch[1] : "Unknown";
+          const submitted = entry.submitted_at
+            ? new Date(entry.submitted_at).toLocaleString()
+            : "Unknown";
 
-    const submitted = entry.submitted_at ? new Date(entry.submitted_at).toLocaleString() : "Unknown";
-    const screenshot = entry.screenshot_url;
-    const status = entry.status;
+          const status = entry.status;
+          const color =
+            status === "approve" ? "lime" : status === "pending" ? "gold" : "red";
 
-    return `
-      <div class="card" style="margin-bottom: 16px; padding: 16px;">
-        <strong>Hay Day ID:</strong> ${haydayId}<br>
-        <strong>Farm Name:</strong> ${farmName}<br>
-        <strong>Level:</strong> ${level}<br>
-        <strong>Status:</strong> <span style="color: ${status === 'approve' ? 'lime' : status === 'pending' ? 'gold' : 'red'}">${status}</span>
-        <strong>Submitted:</strong> ${submitted}<br>
-        ${screenshot ? `
-          <div style="margin-top: 8px;">
-            <img src="${screenshot}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" />
-          </div>` : ""}
-        <div style="margin-top: 10px;">
-          <button onclick="scamAction('${haydayId}', 'add')">➕ Add to Scam List</button>
-          <button onclick="scamAction('${haydayId}', 'mute')">🔇 Mute</button>
-          <button onclick="scamAction('${haydayId}', 'ban')">🔨 Ban</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+          const isScammer = entry.is_scammer;
+          const scamBtn = isScammer
+            ? `<button onclick="scamConfirm('${haydayId}', 'remove')" style="background: #4a0000;">🚫 Remove Scam Tag</button>`
+            : `<button onclick="scamConfirm('${haydayId}', 'add')">➕ Add to Scam List</button>`;
+
+          const rowStyle = isScammer ? 'background: #320000;' : '';
+
+          return `
+            <tr style="border-bottom: 1px solid #333; ${rowStyle}">
+              <td style="padding: 6px;">${haydayId}</td>
+              <td style="padding: 6px;">${farmName}</td>
+              <td style="padding: 6px;">${level}</td>
+              <td style="padding: 6px; color: ${color}">${status}</td>
+              <td style="padding: 6px;">${submitted}</td>
+              <td style="padding: 6px;">${scamBtn}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
 }
+
+
+function scamConfirm(haydayId, action) {
+  const confirmText = action === "add"
+    ? `Are you sure you want to add ${haydayId} to the scam list?`
+    : `Remove ${haydayId} from the scam list?`;
+
+  if (!confirm(confirmText)) return;
+
+  fetch("/api/moderation/scam", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: action,
+      scam_id: haydayId
+    })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      alert(`✅ Scam list updated`);
+      performLookup();  // Refresh display
+    } else {
+      alert("❌ Error: " + result.error);
+    }
+  })
+  .catch(err => {
+    console.error("Scam update error:", err);
+    alert("❌ Network or server error.");
+  });
+}
+
+
 function renderCommands(commands) {
   if (!commands || !commands.length) return "<p style='color: gray;'>No commands used.</p>";
 
@@ -354,40 +874,67 @@ function renderCommands(commands) {
     }).join("");
 }
 
-
-function scamAction(id, action) {
-  alert(`Requested action: ${action} for ID: ${id}`);
-  // TODO: Replace this with a POST request to /api/admin/scam-action
+function renderRowCard(title, contentHTML, footerHTML = "") {
+  return `
+    <div class="wide-card">
+      <div class="card-header">${title}</div>
+      <div class="card-body">${contentHTML}</div>
+      ${footerHTML ? `<div class="card-footer">${footerHTML}</div>` : ""}
+    </div>
+  `;
 }
 
-    async function performLookup() {
-      const id = document.getElementById("lookupInput").value.trim();
-      if (!id) return alert("Enter a valid ID");
 
-      const res = await fetch(`/api/admin-lookup/${id}`);
-      const data = await res.json();
+  async function performLookup() {
+    const id = document.getElementById("lookupInput").value.trim();
+    if (!id) return alert("Enter a valid ID");
 
-      const container = document.getElementById("results");
-      container.innerHTML = "";
+    const res = await fetch(`/api/admin-lookup/${id}`);
+    const data = await res.json();
+    cachedData = data;
 
-      if (data.error) {
-        container.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
-        return;
-      }
+    const container = document.getElementById("results");
+    container.innerHTML = "";
+
+    if (data.error) {
+      container.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
+      return;
+    }
 
     container.innerHTML = `
-      <div class="grid-results">
-        ${createCard("👤 User Summary", renderUserSummary(data.user_summary))}
-        ${createCard("🧾 Verification Attempts", renderVerificationEntries(data.linked_data))}
-        ${createCard("✏ Message Edits", renderLogList(data.messages_edited, ["before", "after", "timestamp"]))}
-        ${createCard("🗑 Message Deletes", renderLogList(data.messages_deleted, ["content", "timestamp"]))}
-        ${createCard("⌨ Commands", renderCommands(data.commands))}
-        ${createCard("📛 Name Changes", renderLogList(data.name_history, ["before", "after", "timestamp"]))}
+      <div class="card-list">
+        ${renderRowCard("👤 User Summary", renderUserSummary(data.user_summary))}
+        ${renderRowCard("🧾 Verification Attempts", renderVerificationEntries(data.linked_data))}
+        <div class="wide-card">
+          <div class="card-header">✏ Message Edits</div>
+          <div class="card-body card-body-edits"></div>
+        </div>
+        <div class="wide-card">
+          <div class="card-header">🗑 Message Deletes</div>
+          <div class="card-body card-body-deletes"></div>
+        </div>
+        <div class="wide-card">
+          <div class="card-header">📛 Name Changes</div>
+          <div class="card-body card-body-names"></div>
+        </div>
+        ${renderRowCard("⌨ Commands", renderCommands(data.commands))}
       </div>
     `;
 
+    updateCardSection("edits");
+    updateCardSection("deletes");
+    updateCardSection("names");
+  }
 
-    }
+let originalMuteModalHTML = "";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.querySelector("#muteModal .modal-content");
+  if (modal) {
+    originalMuteModalHTML = modal.innerHTML;
+  }
+});
+
+
   </script>
-</body>
-</html>
+{% endblock %}

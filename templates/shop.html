@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>🛒 Shop - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}🛒 Shop - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+
   <style>
     .shop-container {
       max-width: 900px;
@@ -64,23 +64,7 @@
   .buy-button:hover {
     background: #45a049;
   }
-  .flash-message {
-  padding: 10px 15px;
-  margin: 8px 0;
-  border-radius: 8px;
-  font-weight: 600;
-  border: 1px solid;
-}
-.flash-success {
-  background: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
-}
-.flash-error {
-  background: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
-}
+
 
 @media (max-width: 600px) {
   .shop-container {
@@ -119,17 +103,12 @@
   .shop-header h1 {
     font-size: 22px;
   }
-
-  .flash-message {
-    font-size: 14px;
-    padding: 8px 12px;
-  }
 }
 
   </style>
-</head>
-<body>
-  {% include "header.html" %}
+{% endblock %}
+
+{% block content %}
 
   <div class="shop-container">
     <div class="shop-header">
@@ -140,17 +119,6 @@
   <div class="coin-balance">🔒 <a href="/login" style="color: #3b82f6;">Log in</a> to view your coin balance</div>
 {% endif %}
     </div>
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div style="margin-bottom: 20px;">
-      {% for category, message in messages %}
-        <div class="flash-message {% if category == 'success' %}flash-success{% else %}flash-error{% endif %}">
-          {{ message }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
     <div class="shop-grid">
  {% for key, item in items.items() %}
   <div class="item-card">
@@ -175,7 +143,4 @@
     </div>
   </div>
 
-  {% include "footer.html" %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-</body>
-</html>
+{% endblock %}

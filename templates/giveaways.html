@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>🎉 Giveaways - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/giveaway_timer.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}🎉 Giveaways - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <style>
 .giveaway-grid {
   display: grid;
@@ -270,13 +267,28 @@ input[type="text"] {
   vertical-align: middle;
 }
 
+.dm-host-btn {
+  background-color: #5865F2;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 8px;
+  text-align: center;
+  text-decoration: none;
+}
+.dm-host-btn:hover {
+  background-color: #4752C4;
+}
 
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+</style>
+{% endblock %}
+
+{% block content %}
+
 <main style="padding-top: 80px; padding-bottom: 80px;">
 
 {% if discord_id %}
@@ -387,9 +399,9 @@ input[type="text"] {
 </div>
 
   </main>
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/participants_modal.js') }}"></script>
+
+{% endblock %}
+{% block scripts %}
   <script>
     function openParticipantsModal(index) {
       document.getElementById("modal-" + index).classList.add("show");
@@ -428,7 +440,9 @@ async function loadWonGiveaways(page = 1) {
         </p>
         <p><strong>Ended:</strong> ${new Date(g.end_time_ts * 1000).toLocaleString()}</p>
         <p><strong>Message:</strong> <a href="https://discord.com/channels/${g.guild_id}/${g.channel_id}/${g.message_id}" target="_blank">View</a></p>
+        ${g.host_id ? `<a href="https://discord.com/users/${g.host_id}" target="_blank" class="view-participants-btn" style="background:#5865F2;">💬 DM Host</a>` : ""}
       `;
+
 
       container.appendChild(card);
     });
@@ -588,6 +602,5 @@ bindLeaveForms();
 
 
   </script>
-</body>
-</html>
+{% endblock %}
 

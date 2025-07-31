@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Booster Dashboard - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Booster Dashboard - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+
   <style>
     .booster-list {
       max-width: 1000px;
@@ -217,9 +214,10 @@ img.booster-avatar {
 }
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+
+{% endblock %}  
+
+{% block content %}
 <div class="dashboard-wrapper">
   <aside class="sidebar">
     <h2>Dashboard</h2>
@@ -281,9 +279,10 @@ img.booster-avatar {
 
         </div>
         {% endfor %}
-    </main>
-  </div>
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+{% endblock %}
+
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     {% for b in boosters %}
@@ -311,5 +310,4 @@ img.booster-avatar {
   });
 </script>
   
-</body>
-</html>
+{% endblock %}

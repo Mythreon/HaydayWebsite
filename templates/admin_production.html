@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>🛠️ Production Manager - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}🛠️ Production Manager - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <style>
     body {
       margin: 0;
@@ -128,9 +126,9 @@
       }
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+  {% endblock %}
+
+{% block content %}
 
   <div class="container" style="max-width: 800px; margin: 100px auto 60px;">
     <h1 style="text-align:center;">🛠️ Manage Production Guide</h1>
@@ -166,8 +164,8 @@
     </div>
   </div>
 
-  {% include 'footer.html' %}
-
+{% endblock %}
+{% block scripts %}
   <script>
     function fillForm(product, machine, xp, price, time_min, level) {
     document.getElementById("productInput").value = product;
@@ -256,6 +254,4 @@ function filterProducts() {
 }
 
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Auctions — HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}Auctions — HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+
   <style>
 .auction-grid {
   display: grid;
@@ -201,9 +199,11 @@ body.dark .refresh-btn:hover {
 
 
   </style>
-</head>
-<body class="light">
-  {% include 'header.html' %}
+
+{% endblock %}
+
+{% block content %}
+
   <main style="margin-top: 100px;">
     <h1 style="text-align:center;">📦 Live Auctions</h1>
     <div style="text-align:center; margin-bottom: 20px;" id="filter-buttons">
@@ -214,7 +214,10 @@ body.dark .refresh-btn:hover {
     </div>
     <div class="auction-grid">
         {% for auction in auctions %}
-        <div class="auction-card" data-endtime="{{ auction.end_time.isoformat() }}" data-current-bid="{{ auction.current_bid }}">
+      <div class="auction-card"
+          data-endtime="{{ auction.end_time.isoformat() }}"
+          data-current-bid="{{ auction.current_bid }}"
+          data-owner-id="{{ auction.owner_id }}">
             <h3>{{ auction.item }} × {{ auction.quantity }}</h3>
 
         <div class="info"><strong>Starting Bid:</strong> {{ "{:,}".format(auction.starting_bid) }} coins</div>
@@ -274,8 +277,9 @@ body.dark .refresh-btn:hover {
       {% endfor %}
     </div>
 
-  </main>
-  {% include 'footer.html' %}
+{% endblock %}
+
+{% block scripts %}
 <script>
 async function fetchLiveAuctions() {
   try {
@@ -370,7 +374,22 @@ fetchLiveAuctions();
 function submitBid(e, auctionId) {
   e.preventDefault();
   const form = e.target;
+  const card = form.closest('.auction-card');
   const amount = form.amount.value;
+
+  const ownerId = card.getAttribute('data-owner-id');
+  const currentUserId = "{{ discord_id }}";
+
+  if (ownerId === currentUserId) {
+    const feedback = card.querySelector('.bid-feedback');
+    if (feedback) {
+      feedback.textContent = "❌ You cannot bid on your own auction.";
+      feedback.style.color = "red";
+    } else {
+      alert("❌ You cannot bid on your own auction.");
+    }
+    return;
+  }
 
   fetch("/api/bid", {
     method: "POST",
@@ -382,9 +401,8 @@ function submitBid(e, auctionId) {
   })
   .then(res => res.json())
   .then(data => {
-    const card = form.closest('.auction-card');
+    const newBid = parseInt(amount.replace(/,/g, ''));
     if (data.success) {
-      const newBid = parseInt(amount.replace(/,/g, ''));
       card.dataset.currentBid = newBid;
 
       const bidDisplay = Array.from(card.querySelectorAll(".info")).find(div =>
@@ -420,8 +438,8 @@ function submitBid(e, auctionId) {
   .catch(() => alert("❌ Failed to submit bid."));
 }
 
+
 </script>
-</body>
 <script>
 function sortAuctions(mode, btn) {
   const grid = document.querySelector(".auction-grid");
@@ -496,5 +514,4 @@ updateCountdowns();
 updateCountdowns();
 
 </script>
-
-</html>
+{% endblock %}

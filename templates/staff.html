@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Verified Staff - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}Verified Staff - HayDay 🍀{% endblock %}
+{% block head_extra %}
+
   <style>
   .profile-container {
     margin-top: 100px;
@@ -257,10 +255,9 @@ body.dark .modal-overlay {
 }
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="profile-container" style="margin-top: 100px;">
     <h1>👥 Verified Staff Members</h1>
     <div class="staff-list">
@@ -314,9 +311,9 @@ body.dark .modal-overlay {
     <button id="modalButton" class="staff-button" target="_blank">Open Discord Profile</button>
   </div>
 </div>
+{% endblock %}
 
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% block scripts %}
   <script>
 function openDiscordProfile(userId) {
   const link = `https://discord.com/users/${userId}`;
@@ -348,5 +345,4 @@ function closeProfileModal(e) {
 }
 </script>
 
-</body>
-</html>
+{% endblock %}

@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Purchase Log - Admin Panel</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Purchase Log - Admin Panel{% endblock %}
+
+{% block head_extra %}
   <style>
     body {
       margin: 0;
@@ -161,9 +159,8 @@
       }
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+{% block content %}
 
   <div class="purchases-wrapper">
     <h2>🧾 Recent Purchases</h2>
@@ -225,6 +222,4 @@
     </div>
   </div>
 
-  {% include 'footer.html' %}
-</body>
-</html>
+{% endblock %}

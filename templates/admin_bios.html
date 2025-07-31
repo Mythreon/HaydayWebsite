@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Moderate Bios - Admin</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Moderate Bios - Admin{% endblock %}
+
+{% block head_extra %}
   <style>
     body {
       margin: 0;
@@ -131,10 +129,9 @@
       }
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="bios-container">
     <h2>📝 Moderate User Bios</h2>
 
@@ -163,7 +160,4 @@
     </div>
   </div>
 
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-</body>
-</html>
+{% endblock %}

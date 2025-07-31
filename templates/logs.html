@@ -1,8 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Discord Logs - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}Discord Logs - HayDay 🍀{% endblock %}
+{% block head_extra %}
+
   <style>
     .log-section {
     margin: 60px auto 40px;
@@ -248,9 +247,9 @@ body.dark .page.active {
 
     
   </style>
-</head>
-<body>
-{% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
 <div class="log-section">
   <h1>Discord Logs</h1>
@@ -290,10 +289,6 @@ body.dark .page.active {
   <button type="submit" style="padding: 10px 20px; border-radius: 6px; background-color: #4caf50; color: white; border: none;">
     Filter
   </button>
-</form>
-
-
-
     </form>
     <h2>Deleted Messages</h2>
     <div class="log-grid">
@@ -410,15 +405,13 @@ body.dark .page.active {
   {% endif %}
 </div>
 
-
-
-
-
-  {% include 'footer.html' %}
 <div id="lightbox-overlay" onclick="hideLightbox()">
   <img id="lightbox-img" src="" alt="enlarged image">
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
   function showLightbox(src) {
     const overlay = document.getElementById("lightbox-overlay");
@@ -477,8 +470,4 @@ body.dark .page.active {
     input.focus();
   }
 </script>
-
-
-
-</body>
-</html>
+{% endblock %}

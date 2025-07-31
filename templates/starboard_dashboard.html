@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Starboard Dashboard - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}Starboard Dashboard - HayDay 🍀{% endblock %}
+{% block head_extra %}
+
   <style>
     .dashboard-wrapper {
       display: flex;
@@ -153,9 +150,9 @@
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
   <div class="dashboard-wrapper">
     <aside class="sidebar">
@@ -203,9 +200,9 @@
         <div id="starboard-cards" style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));"></div>
       </div>
 
+{% endblock %}
 
-  {% include 'footer.html' %}
-
+{% block scripts %}
   <script>
     async function loadThreshold() {
     try {
@@ -293,5 +290,4 @@
       loadStarboardData();
     });
   </script>
-</body>
-</html>
+{% endblock %}

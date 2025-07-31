@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Privacy Policy - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}Privacy Policy - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <style>
     .privacy-container {
       max-width: 800px;
@@ -69,10 +65,9 @@
 }
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="privacy-container">
     <h1>Privacy Policy</h1>
     <em>Effective date: July 29, 2025</em>
@@ -143,6 +138,4 @@
     </p>
   </div>
 
-  {% include 'footer.html' %}
-</body>
-</html>
+{% endblock %}

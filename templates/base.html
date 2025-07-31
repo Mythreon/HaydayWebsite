@@ -23,13 +23,5 @@
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   {% block scripts %}{% endblock %}
 
-  <div id="privacyModal" class="modal-overlay" onclick="overlayClick(event)">
-    <div class="modal-content" id="privacyContentWrapper">
-      <button class="close-button" onclick="closePrivacyModal()">✖</button>
-      <div id="privacyContent">
-        <p>Loading privacy policy...</p>
-      </div>
-    </div>
-  </div>
 </body>
 </html>

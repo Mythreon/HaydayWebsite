@@ -42,9 +42,15 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "changeme")
 
 app.config["RATELIMIT_STORAGE_URL"] = os.environ["REDIS_URL"]
 app.config["RATELIMIT_DEFAULTS"] = ["50 per minute"]
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 limiter = Limiter(
-    key_func=get_remote_address
+    key_func=get_remote_address,
+    default_limits=["50 per minute"]
 )
 limiter.init_app(app)
 
@@ -66,9 +72,29 @@ STAFF_ROLES = {
 }
 
 SCANNER_PATHS = [
-    "/wp-includes", "/wp-admin", "/xmlrpc.php", "/feed", "/blog", "/wordpress",
-    "/wp1", "/test", "/site", "/cms", "/wlwmanifest.xml", "/license.txt"
+    # WordPress core
+    "/wp-admin", "/wp-login.php", "/wp-includes", "/wp-content",
+    "/xmlrpc.php", "/wp-cron.php", "/wp-config.php", "/wp-trackback.php",
+
+    # WordPress scan files
+    "/license.txt", "/readme.html", "/feed", "/blog", "/wordpress", "/wp1", "/wp2",
+    "/wp/wp-admin", "/wp/wp-login.php", "/wordpress/wp-admin", "/wordpress/wp-login.php",
+
+    # Other CMSs and config targets
+    "/joomla", "/drupal", "/typo3", "/cms", "/site", "/phpmyadmin", "/pma",
+    "/config.json", "/config.php", "/.env", "/env", "/.git/config", "/admin.php",
+
+    # Known vulnerable or backdoor files
+    "/shell.php", "/cmd.php", "/upload.php", "/file.php", "/alfa.php", "/ws.php",
+    "/vendor/phpunit", "/server-status", "/info.php",
+
+    # WordPress manifest + discovery
+    "/wlwmanifest.xml", "/robots.txt", "/sitemap.xml",
+
+    # Misc
+    "/test", "/test.php", "/temp", "/backup", "/old", "/dev"
 ]
+
 banned_ips_loaded = False
 BANNED_IPS = set()
 ip_hits = defaultdict(list)
@@ -267,15 +293,21 @@ def ip_watch():
         f"{escape(ip)}: {len(times)} hits"
         for ip, times in sorted(ip_hits.items(), key=lambda x: -len(x[1]))
     ]
-    banned = "<br>".join(sorted(escape(ip) for ip in BANNED_IPS))
+
+    banned = []
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        for doc in client["Security"]["banned_ips"].find():
+            banned.append(f"{escape(doc['_id'])} (internal: {escape(doc.get('internal_ip', 'N/A'))}, reason: {escape(doc.get('reason', 'n/a'))}, hits: {doc.get('hit_count', '?')})")
 
     return f"""
         <h1>🛡️ IP Scanner Watch</h1>
         <h2>Suspicious Activity</h2>
         {"<br>".join(rows) if rows else "<i>None</i>"}
         <h2>🔥 Banned IPs</h2>
-        {banned or "<i>None</i>"}
+        {"<br>".join(banned) if banned else "<i>None</i>"}
     """
+
+
 @app.errorhandler(429)
 def ratelimit_handler(e):
     user_ip = request.remote_addr
@@ -304,19 +336,22 @@ def ratelimit_handler(e):
 def format_number(n):
     return f"{n:,}" if isinstance(n, int) else n
 
-@app.route("/shop", methods=["GET", "POST"])
+@app.route("/shop")
 def shop():
-    discord_id = session.get("discord_id")
-    coins = None
+    if "discord_id" not in session:
+        return redirect("/login")
+
+    user_id = int(session["discord_id"])
+    coins = 0
     owned_items = []
 
-    if discord_id:
-        with MongoClient(os.getenv("MONGO_URI")) as client:
-            eco_user = client["Economy"]["Users"].find_one({"_id": int(discord_id)}) or {}
-            coins = eco_user.get("coins", 0)
-            owned_items = eco_user.get("owned_items", [])
+    with MongoClient(os.getenv("MONGO_URI")) as client:
+        eco_user = client["Economy"]["Users"].find_one({"_id": user_id}) or {}
+        coins = eco_user.get("coins", 0)
+        owned_items = eco_user.get("owned_items", [])
 
     return render_template("shop.html", items=SHOP_ITEMS, coins=coins, owned_items=owned_items)
+
 
 
 @app.route("/send-reply", methods=["POST"])
@@ -341,23 +376,52 @@ def admin_panel():
         return "Unauthorized", 403
     return render_template("admin.html", year=datetime.now().year)
 
+
+
 @app.route("/api/admin-lookup/<id>")
 def admin_lookup(id):
+    # Check if user is staff
     if not is_staff():
         return jsonify({"error": "Unauthorized"}), 403
 
     with MongoClient(os.getenv("MONGO_URI")) as client:
         try:
-            user_id = int(id) if id.isdigit() else id
+            user_id = str(id)
 
-            # Real sources of data
-            mentions = client["Mentions"]["Amount"].find_one({"id": user_id})
+            # Get various data from MongoDB
+            mentions = client["Mentions"]["Amount"].find_one({"id": int(user_id)})
             birthday = client["Birthdays"]["Users"].find_one({"user_id": user_id})
-            scam_records = list(client["Scam"]["Banned"].find({"id": {"$in": [id]}}))
-            mute_info = list(client["Moderation"]["mute"].find({"user_id": user_id}))
-            ban_info = client["Moderation"]["ban_list"].find_one({"_id": str(user_id)})
+            scam_records = list(client["Scam"]["Banned"].find({}))
+            scam_ids = set()
+            for rec in scam_records:
+                for val in rec.get("id", []):
+                    scam_ids.add(val.strip().upper())
+            mute_info = list(client["Moderation"]["mute"].find({"user_id": int(user_id)}))
+            mute_count = mute_info[0].get("mute_count", 0) if mute_info else 0
 
-            # Logs
+            # LIVE ban check via bot internal API with auth header
+            banned = None
+            ban_reason = None
+            try:
+                bot_api_url = os.getenv("BOT_WEBHOOK_URL") + f"/internal/is_banned/{user_id}"
+                headers = {"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+                resp = requests.get(bot_api_url, headers=headers, timeout=3)
+                if resp.ok:
+                    data = resp.json()
+                    banned = data.get("banned", False)
+                    ban_reason = data.get("reason") if banned else None
+            except Exception as e:
+                print(f"⚠️ Ban check failed: {e}")
+
+            usernames = client["Website"]["usernames"].find_one({"_id": str(user_id)})
+
+            # Find active mute if exists
+            active_mute = next(
+                (m for m in mute_info if m.get("muted") and m.get("mute_end") and m["mute_end"] > datetime.utcnow()),
+                None
+            )
+
+            # Fetch logs and name changes
             logs = list(client["Website"]["Logs"].find({
                 "$or": [{"author.id": str(user_id)}, {"user_id": str(user_id)}]
             }))
@@ -374,17 +438,33 @@ def admin_lookup(id):
                     {"Message content": {"$regex": re.escape(id), "$options": "i"}}
                 ]
             }
-
-            # Remove empty filter if ID wasn't digit
+            # Clean empty filters if ID wasn't digit
             verify_query["$or"] = [f for f in verify_query["$or"] if f]
             linked_data = list(client["log"]["verify"].find(verify_query)) if verify_query["$or"] else []
+            for entry in linked_data:
+                message = entry.get("Message content", "")
+                match = re.search(r"HayDay ID:\s*([#A-Z0-9]+)", message, re.I)
+                hayday_id = match.group(1).strip().upper() if match else None
+                entry["hayday_id"] = hayday_id
+                entry["is_scammer"] = hayday_id in scam_ids if hayday_id else False
 
-            return jsonify(serialize_mongo({
+
+            # Prepare response JSON with safe defaults
+            response = {
                 "user_summary": {
                     "user_id": user_id,
                     "mention_count": mentions.get("Mentions") if mentions else 0,
                     "birthday": f"{birthday.get('day')}/{birthday.get('month')} {birthday.get('timezone', '')}" if birthday else None,
-                    "banned": ban_info.get("reason") if ban_info else None
+                    "banned": banned,
+                    "ban_reason": ban_reason,
+                    "muted": bool(active_mute),
+                    "mute_reason": active_mute.get("reason") if active_mute else None,
+                    "mute_end": active_mute.get("mute_end") if active_mute else None,
+                    "mute_end_str": active_mute["mute_end"].strftime("%Y-%m-%d %H:%M:%S UTC") if active_mute else None,
+                    "mute_count": mute_count,
+                    "display_name": usernames.get("display_name") if usernames else None,
+                    "username": usernames.get("username") if usernames else None,
+                    "avatar_url": usernames.get("avatar") if usernames else None
                 },
                 "linked_data": linked_data,
                 "scam_records": scam_records,
@@ -393,11 +473,217 @@ def admin_lookup(id):
                 "messages_deleted": message_deletes,
                 "messages_edited": message_edits,
                 "name_history": name_changes
-            }))
+            }
+
+            return jsonify(serialize_mongo(response))
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+
+
+
+
+@csrf.exempt
+@app.route("/api/moderation/mute", methods=["POST"])
+def api_mute_user():
+    if "discord_id" not in session or not is_staff():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        data = request.json
+        user_id = str(data.get("user_id"))
+        action = data.get("action", "mute")  # mute or unmute
+        reason = data.get("reason", "No reason provided")
+        staff_id = session["discord_id"]
+        guild_id = "959220051427340379"
+
+        if not user_id:
+            return jsonify({"error": "Missing user ID"}), 400
+
+        with MongoClient(os.getenv("MONGO_URI")) as client:
+            collection = client["Moderation"]["mute"]
+
+            if action == "unmute":
+                # Update DB
+                collection.update_one(
+                    {"user_id": user_id, "guild_id": guild_id},
+                    {"$set": {"muted": False}}
+                )
+                # Trigger bot webhook
+                try:
+                    requests.post(
+                        os.getenv("BOT_WEBHOOK_URL") + "/webhook/moderation/unmute",
+                        json={
+                            "user_id": user_id,
+                            "reason": reason,
+                            "staff_id": staff_id
+                        },
+                        headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+                    )
+                except Exception as e:
+                    print(f"⚠️ Failed to trigger unmute webhook: {e}")
+
+                return jsonify({"success": True})
+
+            # Proceed with mute
+            duration_raw = data.get("duration")
+            if not duration_raw:
+                return jsonify({"error": "Missing duration"}), 400
+
+            duration_seconds = parse_duration(duration_raw)
+            if duration_seconds is None:
+                return jsonify({"error": "Invalid duration format"}), 400
+
+            mute_end = datetime.utcnow() + timedelta(seconds=duration_seconds)
+
+            # Save to MongoDB
+            collection.update_one(
+                {"user_id": user_id, "guild_id": guild_id},
+                {
+                    "$set": {
+                        "user_id": user_id,
+                        "guild_id": guild_id,
+                        "mute_end": mute_end,
+                        "reason": reason,
+                        "muted": True
+                    },
+                    "$inc": {"mute_count": 1}
+                },
+                upsert=True
+            )
+
+            # Trigger mute webhook
+            try:
+                requests.post(
+                    os.getenv("BOT_WEBHOOK_URL") + "/webhook/moderation/mute",
+                    json={
+                        "user_id": user_id,
+                        "duration": duration_raw,
+                        "reason": reason,
+                        "staff_id": staff_id
+                    },
+                    headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+                )
+            except Exception as e:
+                print(f"⚠️ Failed to trigger bot mute webhook: {e}")
+
+            return jsonify({"success": True})
+
+    except Exception as e:
+        print("[/api/moderation/mute] Error:", e)
+        return jsonify({"error": str(e)}), 500
+
+@csrf.exempt
+@app.route("/api/moderation/kick", methods=["POST"])
+def api_kick_user():
+    if "discord_id" not in session or not is_staff():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        data = request.json
+        user_id = int(data.get("user_id"))
+        reason = data.get("reason", "No reason provided")
+        staff_id = session["discord_id"]
+
+        # Trigger bot webhook
+        requests.post(
+            os.getenv("BOT_WEBHOOK_URL") + "/webhook/moderation/kick",
+            json={
+                "user_id": user_id,
+                "reason": reason,
+                "staff_id": staff_id
+            },
+            headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@csrf.exempt
+@app.route("/api/moderation/scam", methods=["POST"])
+def api_scam_action():
+    if "discord_id" not in session or not is_staff():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        data = request.json
+        action = data.get("action")  # "add" or "remove"
+        scam_id = data.get("scam_id")
+        scam_id = scam_id.strip().upper()
+        staff_id = session["discord_id"]
+
+        if action not in ("add", "remove") or not scam_id:
+            return jsonify({"error": "Invalid input"}), 400
+
+        # Trigger bot webhook
+        requests.post(
+            os.getenv("BOT_WEBHOOK_URL") + "/webhook/moderation/scam",
+            json={
+                "action": action,
+                "scam_id": scam_id,
+                "staff_id": staff_id
+            },
+            headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+        )
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@csrf.exempt
+@app.route("/api/moderation/ban", methods=["POST"])
+def api_ban_user():
+    if "discord_id" not in session or not is_staff():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        data = request.json
+        user_id = str(data.get("user_id"))
+        reason = data.get("reason", "No reason provided")
+        action = data.get("action")  # "ban" or "unban"
+        staff_id = session["discord_id"]
+
+        if not user_id or action not in ("ban", "unban"):
+            return jsonify({"error": "Invalid input"}), 400
+
+        with MongoClient(os.getenv("MONGO_URI")) as client:
+            ban_col = client["Moderation"]["ban_list"]
+
+            if action == "ban":
+                ban_col.update_one(
+                    {"_id": user_id},
+                    {"$set": {
+                        "banned": True,
+                        "reason": reason,
+                        "banned_by": staff_id,
+                        "timestamp": datetime.utcnow()
+                    }},
+                    upsert=True
+                )
+            else:
+                ban_col.delete_one({"_id": user_id})
+
+        # 🔁 Trigger bot webhook
+        try:
+            requests.post(
+                os.getenv("BOT_WEBHOOK_URL") + "/webhook/moderation/ban",
+                json={
+                    "user_id": user_id,
+                    "reason": reason,
+                    "staff_id": staff_id,
+                    "action": action
+                },
+                headers={"Authorization": os.getenv("BOT_WEBHOOK_KEY")}
+            )
+        except Exception as e:
+            print(f"⚠️ Failed to trigger bot ban webhook: {e}")
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -735,6 +1021,11 @@ def won_giveaways():
                 profile = usernames_col.find_one({"_id": str(host_id)})
                 g["host_display"] = profile.get("display_name", "Unknown") if profile else "Unknown"
                 g["host_avatar"] = profile.get("avatar_url", "") if profile else ""
+                g["host_id"] = str(host_id)
+            else:
+                g["host_display"] = "Unknown"
+                g["host_avatar"] = ""
+                g["host_id"] = None
 
     return jsonify({
         "giveaways": recent,
@@ -942,6 +1233,10 @@ def api_bid():
             print("Auction not found or already ended")
             return jsonify({"success": False, "message": "Auction not found or already ended"}), 404
 
+        if str(auction["owner_id"]) == str(user_id):
+            print("User tried to bid on their own auction!")
+            return jsonify({"success": False, "message": "❌ You cannot bid on your own auction."}), 403
+
         now = datetime.now(timezone.utc)
         end_time = auction["end_time"]
         if end_time.tzinfo is None:
@@ -997,11 +1292,32 @@ def api_bid():
 
     return jsonify({"success": True, "message": "Bid placed!"})
 
+@app.after_request
+def apply_security_headers(response):
+    # Hide Flask default server header
+    response.headers["Server"] = "hidden"
+
+    # Add recommended security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "no-referrer-when-downgrade"
+    return response
+
+@app.before_request
+def block_dangerous_methods():
+    if request.method not in ("GET", "POST", "HEAD", "OPTIONS"):
+        app.logger.warning(f"[BLOCKED METHOD] {request.remote_addr} tried {request.method} on {request.path}")
+        abort(405)  # Method Not Allowed
+
 @app.before_request
 def handle_scanner_protection():
     global banned_ips_loaded, BANNED_IPS
 
-    ip = request.remote_addr
+    raw_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    real_ip = raw_ip.split(",")[0].strip()
+
+    internal_ip = request.remote_addr
     path = request.path.lower()
     now = time.time()
 
@@ -1013,28 +1329,58 @@ def handle_scanner_protection():
         banned_ips_loaded = True
 
     # Auto-block if IP is banned
-    if ip in BANNED_IPS:
-        app.logger.warning(f"[AUTO-BLOCKED] {ip} is banned — tried {path}")
-        abort(403)
+    if real_ip in BANNED_IPS:
+        with MongoClient(os.getenv("MONGO_URI")) as client:
+            doc = client["Security"]["banned_ips"].find_one({"_id": real_ip})
+            if doc:
+                banned_at = doc.get("banned_at")
+                if banned_at and (datetime.utcnow() - banned_at).total_seconds() >= BAN_TIME:
+                    # Expired — unban them
+                    client["Security"]["banned_ips"].delete_one({"_id": real_ip})
+                    BANNED_IPS.discard(real_ip)
+                    app.logger.info(f"[UNBANNED] IP {real_ip} was automatically unbanned after expiry")
+                else:
+                    app.logger.warning(f"[AUTO-BLOCKED] {real_ip} is banned — tried {path} (internal: {internal_ip})")
+                    abort(403)
+
 
     # Check for scanner-like behavior
-    if any(pattern in path for pattern in SCANNER_PATHS):
-        ip_hits[ip].append(now)
-        ip_hits[ip] = [t for t in ip_hits[ip] if now - t < BAN_TIME]
+    matched = next((pattern for pattern in SCANNER_PATHS if pattern in path), None)
+    if matched:
+        ip_hits[real_ip].append(now)
+        ip_hits[real_ip] = [t for t in ip_hits[real_ip] if now - t < BAN_TIME]
 
-        if len(ip_hits[ip]) >= SCAN_THRESHOLD:
-            BANNED_IPS.add(ip)
+        if len(ip_hits[real_ip]) >= SCAN_THRESHOLD:
+            BANNED_IPS.add(real_ip)
             with MongoClient(os.getenv("MONGO_URI")) as client:
                 client["Security"]["banned_ips"].update_one(
-                    {"_id": ip},
-                    {"$set": {"banned_at": datetime.utcnow()}},
+                    {"_id": real_ip},
+                    {"$set": {
+                        "banned_at": datetime.utcnow(),
+                        "reason": f"Matched pattern: {matched}",
+                        "hit_count": len(ip_hits[real_ip]),
+                        "internal_ip": internal_ip
+                    }},
                     upsert=True
                 )
-            app.logger.warning(f"[🔥 BANNED] IP {ip} exceeded threshold ({len(ip_hits[ip])} suspicious hits)")
+            app.logger.warning(f"[🔥 BANNED] IP {real_ip} matched '{matched}' {len(ip_hits[real_ip])} times (internal: {internal_ip})")
         else:
-            app.logger.warning(f"[BLOCKED] Scanner-like request: {ip} tried {path}")
+            app.logger.warning(f"[BLOCKED] Scanner-like request: {real_ip} tried {path} (matched: {matched})")
 
         abort(403)
+
+
+@app.route("/debug-ip")
+def debug_ip():
+    real_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    internal_ip = request.remote_addr
+
+    return f"""
+        <h1>🔍 IP Debug</h1>
+        <p><strong>Real IP:</strong> {real_ip}</p>
+        <p><strong>Internal IP:</strong> {internal_ip}</p>
+    """
+
 
 @app.route("/submit_bid", methods=["POST"])
 def submit_bid():
@@ -1316,37 +1662,8 @@ def home():
 
 @app.route("/login-page")
 def login_page():
-    return render_template("login.html", sitekey=os.getenv("HCAPTCHA_SITEKEY"))
-
-@app.errorhandler(CSRFError)
-def handle_csrf_error(e):
-    flash("⚠️ CAPTCHA must be completed before logging in.", "error")
-    return redirect(url_for("login_page"))
-
-@app.route("/verify-captcha", methods=["POST"])
-def verify_captcha():
-    if not request.form.get("agree_terms"):
-        flash("❌ You must agree to the Terms of Service.", "error")
-        return redirect(url_for("login_page"))
-
-    token = request.form.get("h-captcha-response")
-    if not token:
-        flash("❌ CAPTCHA must be completed before logging in.", "error")
-        return redirect(url_for("login_page"))
-
-    verify = requests.post(
-        "https://hcaptcha.com/siteverify",
-        data={
-            "response": token,
-            "secret": os.getenv("HCAPTCHA_SECRET")
-        }
-    ).json()
-
-    if verify.get("success"):
-        return redirect(url_for("login"))  # Redirect to Discord OAuth
-    else:
-        flash("❌ CAPTCHA validation failed.", "error")
-        return redirect(url_for("login_page"))
+    next_path = request.args.get("next", "/")
+    return redirect(url_for("login", next=next_path))
 
 @app.route("/login")
 def login():
@@ -1691,10 +2008,12 @@ def leaderboard():
 
         elif lb_type == "hosted":
             col = client["Giveaway"]["current_giveaways"]
-            total_users = len(list(col.aggregate([
+            count_cursor = col.aggregate([
                 {"$match": {"host_id": {"$exists": True}}},
-                {"$group": {"_id": "$host_id"}}
-            ])))
+                {"$group": {"_id": "$host_id"}},
+                {"$count": "count"}
+            ])
+            total_users = next(count_cursor, {}).get("count", 0)
             users = list(col.aggregate([
                 {"$match": {"host_id": {"$exists": True}}},
                 {"$group": {"_id": {"$toString": "$host_id"}, "hosted_count": {"$sum": 1}}},
@@ -1706,11 +2025,13 @@ def leaderboard():
 
         elif lb_type == "wins":
             col = client["Giveaway"]["current_giveaways"]
-            total_users = len(list(col.aggregate([
+            count_cursor = col.aggregate([
                 {"$match": {"winners": {"$exists": True}}},
                 {"$unwind": "$winners"},
-                {"$group": {"_id": "$winners"}}
-            ])))
+                {"$group": {"_id": "$winners"}},
+                {"$count": "count"}
+            ])
+            total_users = next(count_cursor, {}).get("count", 0)
             users = list(col.aggregate([
                 {"$match": {"winners": {"$exists": True}}},
                 {"$unwind": "$winners"},

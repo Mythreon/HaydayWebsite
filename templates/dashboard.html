@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Dashboard - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Dashboard - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+
   <style>
 .dashboard-wrapper {
   display: flex;
@@ -142,10 +141,9 @@ button:hover {
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="dashboard-wrapper">
     <aside class="sidebar">
       <h2>Dashboard</h2>
@@ -212,9 +210,9 @@ button:hover {
     </main>
   </div>
 
-  {% include 'footer.html' %}
+{% endblock %}
 
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% block scripts %}
 <script>
 function updateSetting(event, key) {
   event.preventDefault();
@@ -327,7 +325,6 @@ function updateSetting(event, key) {
 
   loadButtonSettings();
 </script>
-</body>
-</html>
+{% endblock %}
 
 

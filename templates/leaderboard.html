@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Leaderboard - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
 <style>
   .leaderboard-container {
     max-width: 700px;
@@ -224,10 +224,9 @@
 
 
 </style>
+{% endblock %}
 
-</head>
-<body>
-{% include 'header.html' %}
+{% block content %}
 
 <div class="leaderboard-container">
   <div class="leaderboard-tabs">
@@ -327,9 +326,9 @@
     <a href="{{ url_for('leaderboard', page=page+1, type=type) }}">Next ➡</a>
   {% endif %}
 </div>
+{% endblock %}
 
-
-{% include 'footer.html' %}
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script>
 function toggleDarkMode() {
@@ -365,6 +364,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-
-</body>
-</html>
+{% endblock %}

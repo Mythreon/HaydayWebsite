@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>📋 Interaction Logs</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}📋 Interaction Logs{% endblock %}
+{% block head_extra %}
   <style>
     body {
       padding: 30px;
@@ -97,9 +94,8 @@
       font-weight: bold;
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+{% block content %}
 
   <main style="margin-top: 80px;">
     <h1>📋 Interaction Logs ({{ total }} total)</h1>
@@ -168,7 +164,9 @@
       {% endif %}
     </div>
   </main>
+{% endblock %}
 
+{% block scripts %}
   <script>
     function toggleDetails(el) {
       const pre = el.nextElementSibling;
@@ -181,5 +179,4 @@
       }
     }
   </script>
-</body>
-</html>
+{% endblock %}

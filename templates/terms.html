@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Terms of Service - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}Terms of Service - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <style>
     .terms-container {
       max-width: 850px;
@@ -78,10 +74,9 @@
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="terms-container">
     <h1>Terms of Service</h1>
     <p><em>Effective Date: {{ year }}</em></p>
@@ -149,7 +144,4 @@
       <a href="https://discord.com/users/154282062973501441" target="_blank"><strong>XavierDK</strong></a>.
     </p>
   </div>
-
-  {% include 'footer.html' %}
-</body>
-</html>
+{% endblock %}

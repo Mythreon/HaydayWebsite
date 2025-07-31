@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Your Profile - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+
+{% block title %}Your Profile - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <style>
     .profile-container {
       max-width: 600px;
@@ -635,9 +634,9 @@ dialog.styled-modal::backdrop {
 }
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
 <div class="profile-wrapper">
   <div class="profile-container">
@@ -805,8 +804,9 @@ dialog.styled-modal::backdrop {
 
   </div>
 </div>
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% endblock %}
+
+{% block scripts %}
 <script>
 function toggleDarkMode() {
   const body = document.body;
@@ -1014,7 +1014,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
-
-
-</body>
-</html>
+{% endblock %}

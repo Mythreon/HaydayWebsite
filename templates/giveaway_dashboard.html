@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Giveaway Dashboard - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Giveaway Dashboard - HayDay 🍀{% endblock %}
+{% block head_extra %}
+
   <style>
 .dashboard-wrapper {
   display: flex;
@@ -192,9 +190,10 @@ button {
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
+
   <div class="dashboard-wrapper">
     <aside class="sidebar">
       <h2>Dashboard</h2>
@@ -262,7 +261,9 @@ button {
     <button onclick="closeRerollModal()">Cancel</button>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script>
   let currentPage = 1;
@@ -571,5 +572,4 @@ async function deleteGiveaway(messageId) {
 
 </script>
 
-</body>
-</html>
+{% endblock %}

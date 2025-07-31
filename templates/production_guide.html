@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Production Guide - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/image_map.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/products_full.js') }}"></script>
+{% extends 'base.html' %}
+{% block title %}Production Guide - HayDay 🍀{% endblock %}
+{% block head_extra %}
 
   <style>
     html {
@@ -228,9 +222,9 @@
 
 
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
   <div class="container">
     <h1>📊 Production Guide</h1>
@@ -290,7 +284,27 @@
 </div>
 <div id="summary" class="summary-box" style="margin-top:20px; text-align:center; font-weight:500; font-size:16px; display:none;"></div>
 
-<script src="{{ url_for('static', filename='js/products_full.js') }}"></script>
+
+<!-- UI Controls -->
+<div style="display:flex; gap:16px; justify-content: space-between; align-items: center; margin-top: 24px; flex-wrap: wrap">
+  <div>
+  <label for="machineFilter">Machine:</label>
+  <select id="machineFilter" onchange="generateSuggestions()">
+    <option value="all">All Machines</option>
+  </select>
+</div>
+
+  <div>
+    <input id="searchInput" type="text" placeholder="Search product..." oninput="generateSuggestions()" style="padding: 8px 12px; border-radius: 6px;" />
+  </div>
+</div>
+
+
+    <div id="results" class="results-grid"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
 <script>
   function generateSuggestions() {
     const machineFilter = document.getElementById("machineFilter").value.toLowerCase();
@@ -417,32 +431,4 @@
   }
 </script>
 
-<!-- UI Controls -->
-<div style="display:flex; gap:16px; justify-content: space-between; align-items: center; margin-top: 24px; flex-wrap: wrap">
-  <div>
-  <label for="machineFilter">Machine:</label>
-  <select id="machineFilter" onchange="generateSuggestions()">
-    <option value="all">All Machines</option>
-  </select>
-</div>
-
-  <div>
-    <input id="searchInput" type="text" placeholder="Search product..." oninput="generateSuggestions()" style="padding: 8px 12px; border-radius: 6px;" />
-  </div>
-</div>
-
-
-    <div id="results" class="results-grid"></div>
-  </div>
-
-  {% include 'footer.html' %}
-  <div id="privacyModal" class="modal-overlay" onclick="overlayClick(event)">
-    <div class="modal-content" id="privacyContentWrapper">
-      <button class="close-button" onclick="closePrivacyModal()">✖</button>
-      <div id="privacyContent">
-        <p>Loading privacy policy...</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+{% endblock %}

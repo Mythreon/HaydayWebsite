@@ -1,9 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Members - HayDay 🍀</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends 'base.html' %}
+{% block title %}Members - HayDay 🍀{% endblock %}
+{% block head_extra %}
+
   <style>
     .directory-container {
       max-width: 1000px;
@@ -236,9 +234,8 @@
 
 
   </style>
-</head>
-<body>
-{% include 'header.html' %}
+{% endblock %}
+{% block content %}
 
 <div class="directory-container">
   <h1 class="directory-header">🍀 Verified Members</h1>
@@ -329,10 +326,8 @@
     </div>
   {% endif %}
 </div>
-
-
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% endblock %}
+{% block scripts %}
   <script>
 document.addEventListener("DOMContentLoaded", async () => {
   const currentUser = "{{ session.get('discord_id', '') }}";
@@ -396,5 +391,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
-</body>
-</html>
+{% endblock %}

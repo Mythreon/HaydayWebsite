@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Lookup - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% block title %}Admin Lookup - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+
   <style>
     body {
       margin: 0;
@@ -132,9 +131,9 @@
       }
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
   <div class="admin-wrapper">
     <h1>🔍 Lookup User Verifications</h1>
@@ -143,9 +142,9 @@
       <div class="no-results">💡 Start typing to see user verification results...</div>
     </div>
   </div>
+{% endblock %}
 
-  {% include 'footer.html' %}
-
+{% block scripts %}
   <script>
     const input = document.getElementById("lookupInput");
     const resultsDiv = document.getElementById("lookupResults");
@@ -224,5 +223,4 @@
       }, 300);
     });
   </script>
-</body>
-</html>
+{% endblock %}
