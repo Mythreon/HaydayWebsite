@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Dashboard - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+
+{% block head_extra %}
   <style>
 .dashboard-wrapper {
   display: flex;
@@ -139,12 +136,10 @@ button:hover {
     gap: 10px;
   }
 }
-
-
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
+
+{% block content %}
 
   <div class="dashboard-wrapper">
     <aside class="sidebar">
@@ -197,11 +192,6 @@ button:hover {
       {% endfor %}
     </div>
 
-
-
-
-
-
       <div class="card">
         <h3>Custom Prefix</h3>
         <label for="prefix-input">Prefix:</label>
@@ -212,10 +202,11 @@ button:hover {
     </main>
   </div>
 
-  {% include 'footer.html' %}
+{% endblock %}
 
+{% block scripts %}
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-<script>
+  <script>
 function updateSetting(event, key) {
   event.preventDefault();
 
@@ -326,8 +317,5 @@ function updateSetting(event, key) {
   }
 
   loadButtonSettings();
-</script>
-</body>
-</html>
-
-
+  </script>
+{% endblock %}
