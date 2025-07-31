@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Booster Dashboard - HayDay 🍀</title>
+{% extends "base.html" %}
+
+{% block title %}Booster Dashboard - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>
   <style>
     .booster-list {
       max-width: 1000px;
@@ -111,205 +111,210 @@
         margin-left: auto;
       }
     }
-.dashboard-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 20px;
-}
 
-.sidebar {
-  flex: 0 0 220px;
-  background: #1e1e1e;
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
-  margin-right: 20px;
-  min-height: 300px;
-}
+    .dashboard-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
 
-.sidebar a {
-  color: #ccc;
-  display: block;
-  margin: 10px 0;
-  text-decoration: none;
-}
+    .sidebar {
+      flex: 0 0 220px;
+      background: #1e1e1e;
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-right: 20px;
+      min-height: 300px;
+    }
 
-.sidebar a:hover {
-  color: white;
-}
+    .sidebar a {
+      color: #ccc;
+      display: block;
+      margin: 10px 0;
+      text-decoration: none;
+    }
 
-.dashboard-content {
-  flex: 1;
-}
-img.booster-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-}
-.pickr {
-  margin-bottom: 10px;
-}
-.disabled-color-picker {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-  margin-bottom: 10px;
-  background: #2c2c2c;
-  padding: 8px;
-  border-radius: 8px;
-  opacity: 0.5;
-}
+    .sidebar a:hover {
+      color: white;
+    }
 
-.disabled-color-picker .color-preview {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid #555;
-}
+    .dashboard-content {
+      flex: 1;
+    }
 
-.disabled-color-picker .disabled-text {
-  color: #ccc;
-  font-size: 14px;
-}
-.form-group {
-  margin-bottom: 16px;
-}
+    img.booster-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
 
-.color-picker-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
+    .pickr {
+      margin-bottom: 10px;
+    }
 
-.disabled-color-block {
-  background: #2a2a2a;
-  padding: 10px;
-  border-radius: 8px;
-  opacity: 0.8;
-}
+    .disabled-color-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      background: #2c2c2c;
+      padding: 8px;
+      border-radius: 8px;
+      opacity: 0.5;
+    }
 
-.disabled-color-picker {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-}
+    .disabled-color-picker .color-preview {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid #555;
+    }
 
-.color-preview {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid #555;
-}
+    .disabled-color-picker .disabled-text {
+      color: #ccc;
+      font-size: 14px;
+    }
 
-.disabled-text {
-  color: #ccc;
-  font-size: 14px;
-}
+    .form-group {
+      margin-bottom: 16px;
+    }
 
-.warning-note {
-  display: block;
-  margin-top: 6px;
-  color: #ffa500;
-  font-size: 13px;
-}
+    .color-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
 
+    .disabled-color-block {
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 8px;
+      opacity: 0.8;
+    }
+
+    .disabled-color-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .color-preview {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid #555;
+    }
+
+    .disabled-text {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .warning-note {
+      display: block;
+      margin-top: 6px;
+      color: #ffa500;
+      font-size: 13px;
+    }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
-<div class="dashboard-wrapper">
-  <aside class="sidebar">
-    <h2>Dashboard</h2>
-    <a href="/dashboard">Bot Settings</a>
-    <a href="/giveaway-dashboard">Giveaways</a>
-    <a href="/booster-dashboard">Boosters</a>
-    <a href="/admin">Admin Panel</a>
-    <a href="#">Verifications</a>
-    <a href="/auction_dashboard">Auctions</a>
-    <a href="#">Moderation</a>
-    <a href="#">Starboard</a>
-  </aside>
+{% endblock %}
 
-  <main class="dashboard-content">  
-  <div class="booster-list">
-    <h2>🎁 Staff Booster Role Dashboard</h2>
-    {% if message %}
-      <p style="margin-bottom: 20px;">{{ message }}</p>
-    {% endif %}
+{% block content %}
+  <div class="dashboard-wrapper">
+    <aside class="sidebar">
+      <h2>Dashboard</h2>
+      <a href="/dashboard">Bot Settings</a>
+      <a href="/giveaway-dashboard">Giveaways</a>
+      <a href="/booster-dashboard">Boosters</a>
+      <a href="/admin">Admin Panel</a>
+      <a href="#">Verifications</a>
+      <a href="/auction_dashboard">Auctions</a>
+      <a href="#">Moderation</a>
+      <a href="#">Starboard</a>
+    </aside>
+
+    <main class="dashboard-content">  
+      <div class="booster-list">
+        <h2>🎁 Staff Booster Role Dashboard</h2>
+        {% if message %}
+          <p style="margin-bottom: 20px;">{{ message }}</p>
+        {% endif %}
         {% for b in boosters %}
-        <div class="booster-card">
+          <div class="booster-card">
             <div class="booster-header">
-            <img class="booster-avatar" src="{{ b.avatar_url }}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-            <div class="booster-info">
+              <img class="booster-avatar" src="{{ b.avatar_url }}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+              <div class="booster-info">
                 <strong>{{ b.display_name }}</strong><br>
                 <small>@{{ b.username }}</small><br>
                 <small>Current Role: <b>{{ b.role_name }}</b>
-                <span class="color-swatch" style="background-color: {{ b.color2 or '#cccccc' }}; opacity: 0.5;" title="Gradient second color – not supported yet"></span>
+                  <span class="color-swatch" style="background-color: {{ b.color2 or '#cccccc' }}; opacity: 0.5;" title="Gradient second color – not supported yet"></span>
                 </small>
-            </div>
+              </div>
             </div>
             <form method="POST" action="/booster-dashboard">
-            <input type="hidden" name="target_id" value="{{ b.user_id }}">
+              <input type="hidden" name="target_id" value="{{ b.user_id }}">
 
-            <div class="form-group">
+              <div class="form-group">
                 <label for="role_name_{{ loop.index }}">New Role Name:</label>
                 <input type="text" name="role_name" id="role_name_{{ loop.index }}" value="{{ b.role_name }}" placeholder="New Role Name">
-            </div>
+              </div>
 
-            <div class="form-group">
+              <div class="form-group">
                 <label for="role_color_{{ loop.index }}">New Role Color (Hex):</label>
                 <div class="color-picker-row">
-                <div id="color-picker-{{ loop.index }}"></div>
-                <input type="hidden" name="role_color" id="role_color_{{ loop.index }}" value="{{ b.color }}">
+                  <div id="color-picker-{{ loop.index }}"></div>
+                  <input type="hidden" name="role_color" id="role_color_{{ loop.index }}" value="{{ b.color }}">
                 </div>
-            </div>
+              </div>
 
-            <div class="form-group disabled-color-block">
+              <div class="form-group disabled-color-block">
                 <label>Second Role Color (Gradient):</label>
                 <div class="disabled-color-picker" title="Gradient roles not yet supported">
-                <div class="color-preview" style="background: {{ b.color2 or '#888888' }}"></div>
-                <span class="disabled-text">Gradient not supported</span>
+                  <div class="color-preview" style="background: {{ b.color2 or '#888888' }}"></div>
+                  <span class="disabled-text">Gradient not supported</span>
                 </div>
                 <small class="warning-note">⚠️ Display only — not editable yet</small>
-            </div>
+              </div>
 
-            <button type="submit">Update Role</button>
+              <button type="submit">Update Role</button>
             </form>
-
-        </div>
+          </div>
         {% endfor %}
+      </div>
     </main>
   </div>
+{% endblock %}
+
+{% block scripts %}
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    {% for b in boosters %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      {% for b in boosters %}
         const pickr{{ loop.index }} = Pickr.create({
-        el: '#color-picker-{{ loop.index }}',
-        theme: 'classic',
-        default: '{{ b.color }}',
-        showAlways: true,
-        inline: true,
-        components: {
+          el: '#color-picker-{{ loop.index }}',
+          theme: 'classic',
+          default: '{{ b.color }}',
+          showAlways: true,
+          inline: true,
+          components: {
             preview: true,
             opacity: false,
             hue: true,
             interaction: {
-            hex: true,
-            input: true,
-            save: true
+              hex: true,
+              input: true,
+              save: true
             }
-        }
+          }
         });
-      pickr{{ loop.index }}.on('save', (color) => {
-        document.getElementById('role_color_{{ loop.index }}').value = color.toHEXA().toString();
-      });
-    {% endfor %}
-  });
-</script>
-  
-</body>
-</html>
+        pickr{{ loop.index }}.on('save', (color) => {
+          document.getElementById('role_color_{{ loop.index }}').value = color.toHEXA().toString();
+        });
+      {% endfor %}
+    });  // This was much easier than auctions.html, thank you so much 💖
+  </script>
+{% endblock %}
