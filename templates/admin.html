@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Admin Panel — HayDay{% endblock %}
+
+{% block head_extra %}
   <style>
 .dashboard-wrapper {
   display: flex;
