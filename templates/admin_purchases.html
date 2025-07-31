@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Purchase Log - Admin Panel</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f4f4;
-    }
+{% extends 'base.html' %}
 
+{% block title %}Purchase Log - Admin Panel{% endblock %}
+
+{% block head_extra %}
+  <style>
     .purchases-wrapper {
       max-width: 1000px;
       margin: 120px auto;
@@ -161,10 +154,9 @@
       }
     }
   </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% endblock %}
 
+{% block content %}
   <div class="purchases-wrapper">
     <h2>🧾 Recent Purchases</h2>
 
@@ -189,31 +181,31 @@
           </tr>
         </thead>
         <tbody>
-        {% for p in purchases %}
-        <tr>
-          <td>
-            {% if p.display_name != p.user_id|string %}
-              <a href="/profile/{{ p.user_id }}">{{ p.display_name }}</a>
-            {% else %}
-              {{ p.user_id }}
-            {% endif %}
-          </td>
-          <td>{{ p.name }}</td>
-          <td><code>{{ p.item }}</code></td>
-          <td>{{ p.price }}</td>
-          <td>{{ p.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td style="text-align: center;">
-            {% if p.get("refunded") %}
-              <span style="color: gray; font-weight: bold;">✔ Refunded</span>
-            {% else %}
-              <form method="post" action="/admin/refund" style="display: inline;" onsubmit="return confirm('Refund this purchase?');">
-                <input type="hidden" name="purchase_id" value="{{ p._id }}">
-                <button type="submit" style="background: #d32f2f; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-weight: 600; cursor: pointer;">🗑️ Refund</button>
-              </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
+          {% for p in purchases %}
+          <tr>
+            <td>
+              {% if p.display_name != p.user_id|string %}
+                <a href="/profile/{{ p.user_id }}">{{ p.display_name }}</a>
+              {% else %}
+                {{ p.user_id }}
+              {% endif %}
+            </td>
+            <td>{{ p.name }}</td>
+            <td><code>{{ p.item }}</code></td>
+            <td>{{ p.price }}</td>
+            <td>{{ p.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td style="text-align: center;">
+              {% if p.get("refunded") %}
+                <span style="color: gray; font-weight: bold;">✔ Refunded</span>
+              {% else %}
+                <form method="post" action="/admin/refund" style="display: inline;" onsubmit="return confirm('Refund this purchase?');">
+                  <input type="hidden" name="purchase_id" value="{{ p._id }}">
+                  <button type="submit" style="background: #d32f2f; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-weight: 600; cursor: pointer;">🗑️ Refund</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
@@ -224,7 +216,4 @@
       {% endfor %}
     </div>
   </div>
-
-  {% include 'footer.html' %}
-</body>
-</html>
+{% endblock %}
