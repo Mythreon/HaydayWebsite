@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Current Bans - HayDay 🍀</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
-  <style>
+{% extends "base.html" %}
+
+{% block title %}Current Bans - HayDay 🍀{% endblock %}
+
+{% block head_extra %}
+<style>
 .ban-cards {
   max-width: 1100px;
   margin: 100px auto;
@@ -168,78 +168,78 @@ body.dark .copy-id { background: #444; color: white; }
     margin-top: 12px;
   }
 }
+</style>
+{% endblock %}
 
-  </style>
-</head>
-<body>
-  {% include 'header.html' %}
+{% block content %}
+<div class="ban-page">
+  <h2 style="text-align: center;">🔨 Current Banned Users</h2>
 
-  <div class="ban-page">
-    <h2 style="text-align: center;">🔨 Current Banned Users</h2>
+  <form class="search-bar" method="GET" action="/current-bans">
+    <input type="text" name="search" placeholder="Search by name or reason..." value="{{ search }}">
+  </form>
 
-    <form class="search-bar" method="GET" action="/current-bans">
-      <input type="text" name="search" placeholder="Search by name or reason..." value="{{ search }}">
-    </form>
-    {% if bans %}
-    <div id="ban-results" class="ban-cards">
-        {% for ban in bans %}
-        <div class="ban-card">
-            <img class="ban-avatar" src="{{ ban.avatar if ban.avatar else 'https://cdn.discordapp.com/embed/avatars/0.png' }}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
-            <div class="ban-name">{{ ban.name }}</div>
-            <div class="ban-id">
-            ID: {{ ban._id }}
-            <br>
-            <button class="copy-id" data-id="{{ ban._id }}">Copy ID</button>
-            </div>
-            <div class="ban-reason">📝 {{ ban.reason }}</div>
-            {% if session.get("discord_id") and is_staff(session.get("roles", [])) %}
-            <form action="/mod-action" method="POST" onsubmit="return confirm('Unban {{ ban.name }}?');">
-                <input type="hidden" name="user_input" value="{{ ban._id }}">
-                <input type="hidden" name="action" value="unban">
-                <input type="hidden" name="reason" value="Unbanned via panel">
-                <button class="unban-button" type="submit">Unban</button>
-            </form>
-            {% endif %}
-        </div>
-        {% endfor %}
-
-        <div class="pagination" style="grid-column: 1 / -1; text-align: center;">
-        {% if page > 1 %}
-            <a href="?search={{ search }}&page={{ page - 1 }}">⬅️ Prev</a>
-        {% endif %}
-        Page {{ page }} of {{ total_pages }}
-        {% if page < total_pages %}
-            <a href="?search={{ search }}&page={{ page + 1 }}">Next ➡️</a>
-        {% endif %}
-        <input type="number" min="1" max="{{ total_pages }}" placeholder="Page #"
-            style="margin-left: 12px; width: 60px;"
-            onkeydown="if(event.key==='Enter'){let p=parseInt(this.value);if(p>=1&&p<={{ total_pages }}){location.href='?search={{ search }}&page='+p;} }">
-        </div>
+  {% if bans %}
+  <div id="ban-results" class="ban-cards">
+    {% for ban in bans %}
+    <div class="ban-card">
+      <img class="ban-avatar" src="{{ ban.avatar if ban.avatar else 'https://cdn.discordapp.com/embed/avatars/0.png' }}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+      <div class="ban-name">{{ ban.name }}</div>
+      <div class="ban-id">
+        ID: {{ ban._id }}<br>
+        <button class="copy-id" data-id="{{ ban._id }}">Copy ID</button>
+      </div>
+      <div class="ban-reason">📝 {{ ban.reason }}</div>
+      {% if session.get("discord_id") and is_staff(session.get("roles", [])) %}
+      <form action="/mod-action" method="POST" onsubmit="return confirm('Unban {{ ban.name }}?');">
+        <input type="hidden" name="user_input" value="{{ ban._id }}">
+        <input type="hidden" name="action" value="unban">
+        <input type="hidden" name="reason" value="Unbanned via panel">
+        <button class="unban-button" type="submit">Unban</button>
+      </form>
+      {% endif %}
     </div>
-    {% else %}
-    <p style="text-align: center;">✅ No users are currently banned.</p>
-    {% endif %}
+    {% endfor %}
 
+    <div class="pagination" style="grid-column: 1 / -1; text-align: center;">
+      {% if page > 1 %}
+      <a href="?search={{ search }}&page={{ page - 1 }}">⬅️ Prev</a>
+      {% endif %}
+      Page {{ page }} of {{ total_pages }}
+      {% if page < total_pages %}
+      <a href="?search={{ search }}&page={{ page + 1 }}">Next ➡️</a>
+      {% endif %}
+      <input type="number" min="1" max="{{ total_pages }}" placeholder="Page #"
+        style="margin-left: 12px; width: 60px;"
+        onkeydown="if(event.key==='Enter'){let p=parseInt(this.value);if(p>=1&&p<={{ total_pages }}){location.href='?search={{ search }}&page='+p;} }">
+    </div>
   </div>
+  {% else %}
+  <p style="text-align: center;">✅ No users are currently banned.</p>
+  {% endif %}
+</div>
+{% endblock %}
 
-  {% include 'footer.html' %}
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script>
-    const searchInput = document.querySelector('input[name="search"]');
-    let debounce;
+{% block scripts %}
+{{ super() }}
+<script>
+  const searchInput = document.querySelector('input[name="search"]');
+  let debounce;
 
-    searchInput.addEventListener("input", () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
-        const query = encodeURIComponent(searchInput.value);
-        fetch(`/current-bans?search=${query}&ajax=1`)
-            .then(response => response.text())
-            .then(html => {
-            document.getElementById("ban-results").innerHTML = html;
-            });
-        }, 250);
-    });
-    </script>
+  // This actually takes a bit of time reorganizing this code
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      const query = encodeURIComponent(searchInput.value);
+      fetch(`/current-bans?search=${query}&ajax=1`)
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById("ban-results").innerHTML = html;
+        });
+    }, 250);
+  });
+</script>
 <script>
   document.addEventListener("click", function (e) {
     if (e.target.classList.contains("copy-id")) {
@@ -252,7 +252,7 @@ body.dark .copy-id { background: #444; color: white; }
           setTimeout(() => {
             e.target.textContent = originalText;
             e.target.disabled = false;
-          }, 5000); // 5 seconds
+          }, 5000);
         }).catch(err => {
           alert("Failed to copy ID: " + err);
         });
@@ -260,7 +260,4 @@ body.dark .copy-id { background: #444; color: white; }
     }
   });
 </script>
-
-    
-</body>
-</html>
+{% endblock %}
