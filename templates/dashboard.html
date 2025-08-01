@@ -4,45 +4,6 @@
 {% block head_extra %}
 
   <style>
-.dashboard-wrapper {
-  display: flex;
-  flex-direction: row;
-  min-height: 100vh;
-  margin-top: 60px;
-}
-
-.sidebar {
-  width: 240px;
-  background-color: #222;
-  color: white;
-  padding: 20px;
-  font-family: sans-serif;
-}
-
-.sidebar h2 {
-  font-size: 20px;
-  margin-bottom: 16px;
-}
-
-.sidebar a {
-  display: block;
-  color: white;
-  text-decoration: none;
-  margin: 8px 0;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-
-.sidebar a:hover {
-  background-color: #333;
-}
-
-.dashboard-content {
-  flex-grow: 1;
-  padding: 40px;
-  background-color: #f4f4f4;
-}
 
 body.dark .dashboard-content {
   background-color: #1e1e1e;
@@ -112,50 +73,13 @@ button:hover {
   margin-top: 8px;
 }
 
-@media (max-width: 768px) {
-  .dashboard-wrapper {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    padding: 15px;
-    text-align: center;
-  }
-
-  .sidebar a {
-    display: inline-block;
-    margin: 6px;
-    font-size: 15px;
-  }
-
-  .dashboard-content {
-    padding: 20px;
-  }
-
-  .toggle-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
 
   </style>
 {% endblock %}
 
 {% block content %}
-  <div class="dashboard-wrapper">
-    <aside class="sidebar">
-      <h2>Dashboard</h2>
-      <a href="/dashboard">Bot Settings</a>
-      <a href="/giveaway-dashboard">Giveaways</a>
-      <!-- <a href="/booster-dashboard">Boosters</a> -->
-      <a href="/admin">Admin Panel</a>
-      <a href="#">Verifications</a>
-      <a href="/auction-dashboard">Auctions</a>
-      <a href="#">Moderation</a>
-      <a href="/starboard-dashboard">Starboard</a>
-    </aside>
+<div class="dashboard-wrapper">
+  {% include 'sidepanel.html' %}
 
     <main class="dashboard-content">
       <div class="card">

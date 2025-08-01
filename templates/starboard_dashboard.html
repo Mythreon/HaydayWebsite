@@ -155,17 +155,7 @@
 {% block content %}
 
   <div class="dashboard-wrapper">
-    <aside class="sidebar">
-      <h2>Dashboard</h2>
-      <a href="/dashboard">Bot Settings</a>
-      <a href="/giveaway-dashboard">Giveaways</a>
-      <!-- <a href="/booster-dashboard">Boosters</a> -->
-       <a href="/admin">Admin Panel</a>
-      <a href="#">Verifications</a>
-      <a href="/auction-dashboard">Auctions</a>
-      <a href="#">Moderation</a>
-      <a href="/starboard-dashboard">Starboard</a>
-    </aside>
+{% include 'sidepanel.html' %}
 
     <main class="dashboard-content">
       <h1>🌟 Starboard Settings</h1>
@@ -199,7 +189,8 @@
         <h3>Current Starboard Messages</h3>
         <div id="starboard-cards" style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));"></div>
       </div>
-
+    </main>
+  </div>
 {% endblock %}
 
 {% block scripts %}

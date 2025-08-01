@@ -306,6 +306,14 @@
 
 {% block scripts %}
 <script>
+let products = [];
+
+async function fetchProductionData() {
+  const res = await fetch('/api/production-data');
+  products = await res.json();
+}
+
+
   function generateSuggestions() {
     const machineFilter = document.getElementById("machineFilter").value.toLowerCase();
     const loader = document.getElementById("loader")
@@ -429,6 +437,12 @@
       })
     }, 800)
   }
+window.addEventListener("DOMContentLoaded", async () => {
+  await fetchProductionData();
+  generateSuggestions();
+});
+
+
 </script>
 
 {% endblock %}

@@ -110,8 +110,12 @@ body.dark .giveaway-card {
   border-radius: 12px;
   color: #eee;
   box-sizing: border-box;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
 }
-
+.modal-content::-webkit-scrollbar {
+  display: none;
+}
 .close-button {
   float: right;
   background: none;
@@ -472,6 +476,45 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!checkbox || checkbox.checked) return true;
   alert("❗ Please confirm you’ve read the giveaway title and understand the extra requirements.");
   return false;
+}
+
+function loadParticipantPage(index, page) {
+  const modal = document.getElementById(`modal-${index}`);
+  const input = document.getElementById(`search-input-${index}`);
+  const searchTerm = input?.value?.toLowerCase() || "";
+
+  const allRows = modal.querySelectorAll(".participant-row");
+  const matchingRows = [];
+
+  allRows.forEach(row => {
+    const name = row.dataset.name || "";
+    if (name.includes(searchTerm)) {
+      matchingRows.push(row);
+    } else {
+      row.style.display = "none";
+    }
+  });
+
+  const perPage = 10;
+  const totalPages = Math.ceil(matchingRows.length / perPage);
+  const pagination = document.getElementById(`pagination-${index}`);
+  pagination.innerHTML = "";
+
+  const start = (page - 1) * perPage;
+  const end = start + perPage;
+  matchingRows.forEach((row, i) => {
+    row.style.display = (i >= start && i < end) ? "" : "none";
+  });
+
+  if (totalPages > 1) {
+    if (page > 1) {
+      pagination.innerHTML += `<a class="refresh-btn" onclick="loadParticipantPage(${index}, ${page - 1})">⬅ Prev</a>`;
+    }
+    pagination.innerHTML += `<span style="margin: 0 10px;">Page ${page} of ${totalPages}</span>`;
+    if (page < totalPages) {
+      pagination.innerHTML += `<a class="refresh-btn" onclick="loadParticipantPage(${index}, ${page + 1})">Next ➡</a>`;
+    }
+  }
 }
 
 function bindJoinForms() {

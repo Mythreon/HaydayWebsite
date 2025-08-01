@@ -923,7 +923,6 @@ def giveaways_page():
             g["channel_id"] = str(g.get("channel_id", ""))
             g["participants_percent"] = []
             g["participant_info"] = []
-
             required_id = str(g.get("required_role_id")) if g.get("required_role_id") else None
             g["required_role_name"] = role_mapping.get(required_id, {}).get("name") if required_id else None
 
@@ -951,8 +950,9 @@ def giveaways_page():
                 user = user_map.get(uid_str)
                 display_name = user.get("display_name", f"<@{uid_str}>") if user else f"<@{uid_str}>"
                 avatar = (
-                    f"https://cdn.discordapp.com/avatars/{uid_str}/{user.get('avatar_hash')}.png"
-                    if user and user.get("avatar_hash") else None
+                    user.get("avatar")
+                    if user and user.get("avatar")
+                    else "https://cdn.discordapp.com/embed/avatars/0.png"
                 )
 
                 g["participants_percent"].append({
@@ -967,7 +967,6 @@ def giveaways_page():
                     "name": display_name,
                     "avatar": avatar
                 })
-
             giveaways.append(g)
 
         return render_template(
