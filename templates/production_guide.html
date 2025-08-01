@@ -305,15 +305,10 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/image_map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/products_full.js') }}"></script>
+
 <script>
-let products = [];
-
-async function fetchProductionData() {
-  const res = await fetch('/api/production-data');
-  products = await res.json();
-}
-
-
   function generateSuggestions() {
     const machineFilter = document.getElementById("machineFilter").value.toLowerCase();
     const loader = document.getElementById("loader")
@@ -437,11 +432,9 @@ async function fetchProductionData() {
       })
     }, 800)
   }
-window.addEventListener("DOMContentLoaded", async () => {
-  await fetchProductionData();
+window.addEventListener("DOMContentLoaded", () => {
   generateSuggestions();
 });
-
 
 </script>
 
