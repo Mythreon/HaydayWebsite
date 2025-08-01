@@ -143,6 +143,8 @@
       <!-- ... [unchanged form-group blocks from original go here] ... -->
 
       {{ form_fields | safe }} <!-- optionally split these if templated -->
+      <img id="productPreview" class="form-preview">
+      <img id="machinePreview" class="form-preview">
 
       <div class="form-group" style="grid-column: span 2; display: flex; gap: 10px;">
         <button type="submit" class="generate-btn" style="background-color:#4caf50; color:white; flex: 1;">➕ Add or Update</button>
@@ -206,22 +208,6 @@
 
   </script>
   <script>
-function previewSelectedImage(event) {
-  const preview = document.getElementById("productPreview");
-  const file = event.target.files[0];
-  if (file) {
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "inline-block";
-  }
-}
-function previewSelectedMachineImage(event) {
-  const preview = document.getElementById("machinePreview");
-  const file = event.target.files[0];
-  if (file) {
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "inline-block";
-  }
-}
 function previewSelectedImage(event) {
   const preview = document.getElementById("productPreview");
   const file = event.target.files[0];
