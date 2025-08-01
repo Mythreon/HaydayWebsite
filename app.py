@@ -1842,33 +1842,30 @@ def profile():
     with MongoClient(os.getenv("MONGO_URI")) as client:
         level_col = client["hayday"]["level"]
         level_doc = level_col.find_one({"_id": discord_id})
-        all_users = list(level_col.find().sort("xp", -1))  # used for rank
+        all_users = list(level_col.find().sort("xp", -1))
+
         users_collection = client["Website"]["users"]
+        usernames_collection = client["Website"]["usernames"]
+
         user = users_collection.find_one({"_id": discord_id}) or {}
+        fallback = usernames_collection.find_one({"_id": discord_id}) or {}
+
+        display_name = fallback.get("display_name", "Unknown")
+
+        # ✅ Always fetch avatar from synced collection
+        avatar_url = fallback.get("avatar", f"https://cdn.discordapp.com/embed/avatars/0.png")
+
         eco_user = client["Economy"]["Users"].find_one({"_id": int(discord_id)}) or {}
         coins = eco_user.get("coins", 0)
         streak = eco_user.get("streak", 0)
-        mention_count = 0
-        mention_col = client["Mentions"]["Amount"]
-        mention_doc = mention_col.find_one({"id": int(discord_id)})
+
+        mention_doc = client["Mentions"]["Amount"].find_one({"id": int(discord_id)})
+        mention_count = mention_doc.get("Mentions", 0) if mention_doc else 0
+
         friend_doc = client["Website"]["FriendRequests"].find_one({"_id": discord_id}) or {}
         friend_count = len(friend_doc.get("friends", []))
-        if mention_doc:
-            mention_count = mention_doc.get("Mentions", 0)
 
-        # ✅ Get avatar from fallback if needed
-        avatar_hash = session.get("avatar_hash")
-        if not avatar_hash:
-            fallback = client["Website"]["usernames"].find_one({"_id": discord_id})
-            if fallback:
-                avatar_hash = fallback.get("avatar", "")
-
-        if avatar_hash and avatar_hash.startswith("http"):
-            avatar_url = avatar_hash
-        else:
-            avatar_url = f"https://cdn.discordapp.com/avatars/{discord_id}/{avatar_hash}.png" if avatar_hash else "https://cdn.discordapp.com/embed/avatars/0.png"
-
-    user_roles = user.get("roles", [])
+    user_roles = user.get("roles", fallback.get("roles", []))
     staff_badges = [STAFF_ROLES[int(rid)] for rid in user_roles if int(rid) in STAFF_ROLES]
 
     level = xp = message_count = 0
@@ -1889,6 +1886,7 @@ def profile():
                 boost_until = boost_until.to_datetime()
             if boost_until.tzinfo is None:
                 boost_until = boost_until.replace(tzinfo=timezone.utc)
+
             if boost_until > now:
                 boost_time_left = str(boost_until - now).split(".")[0]
 
@@ -1918,9 +1916,9 @@ def profile():
     return render_template(
         "profile.html",
         username=session.get("username"),
-        display_name=session.get("display_name"),
+        display_name=display_name,
         discord_id=discord_id,
-        avatar_url=avatar_url,  # ✅ use consistent final url
+        avatar_url=avatar_url,
         roles=sorted_roles,
         highest_role=highest_role,
         level=level,
@@ -1940,6 +1938,7 @@ def profile():
         achievements=achievements,
         friend_count=friend_count
     )
+
 
 
 @app.route("/test-flash")
@@ -2467,50 +2466,35 @@ def profile_directory():
 @app.route("/profile/<discord_id>")
 def public_profile(discord_id):
     viewer_id = session.get("discord_id")
-    
-    # ✅ Redirect to editable profile page if user is viewing their own profile
     if viewer_id == discord_id:
         return redirect(url_for("profile"))
+
     # Defaults
     level = xp = message_count = boost_time_left = None
     progress_percent = current_xp_formatted = required_xp_formatted = rank = None
-
-    viewer_id = session.get("discord_id")
     is_owner = viewer_id == discord_id
 
     with MongoClient(os.getenv("MONGO_URI")) as client:
+        usernames_collection = client["Website"]["usernames"]
         users_collection = client["Website"]["users"]
-        user = users_collection.find_one({"_id": discord_id})
-        is_logged_in = bool(user)
 
-        if not user:
-            fallback = client["Website"]["usernames"].find_one({"_id": discord_id})
-            if not fallback:
-                return "🚫 This profile is private or does not exist.", 404
-
-            avatar_url = fallback.get("avatar", "")
-            avatar_hash = ""
-
-            # Check if it's already a full URL
-            if avatar_url.startswith("http"):
-                avatar_hash = avatar_url.split(f"{discord_id}/")[-1].split("?")[0]  # get the actual hash
-            else:
-                avatar_hash = avatar_url
-
-            user = {
-                "_id": fallback["_id"],
-                "display_name": fallback.get("display_name", fallback.get("username", "Unknown")),
-                "avatar_hash": avatar_hash,
-                "roles": fallback.get("roles", []),
-                "public_profile": True
-            }
-
-        if not user.get("public_profile", False) and not is_owner:
+        fallback = usernames_collection.find_one({"_id": discord_id})
+        if not fallback:
             return "🚫 This profile is private or does not exist.", 404
 
-        user_roles = user.get("roles", [])
+        # ✅ Always use avatar URL from synced collection
+        avatar_url = fallback.get("avatar", "https://cdn.discordapp.com/embed/avatars/0.png")
+        display_name = fallback.get("display_name", fallback.get("username", "Unknown"))
+        roles = fallback.get("roles", [])
+
+        # Check if user has explicitly set public/private preference
+        user = users_collection.find_one({"_id": discord_id}) or {}
+        if not user.get("public_profile", True) and not is_owner:
+            return "🚫 This profile is private or does not exist.", 404
+
+        # Staff badges from roles
         staff_badges = []
-        for rid in user_roles:
+        for rid in roles:
             try:
                 if isinstance(rid, dict) and "$numberLong" in rid:
                     rid_int = int(rid["$numberLong"])
@@ -2521,18 +2505,19 @@ def public_profile(discord_id):
             except:
                 continue
 
-
+        # Economy
         eco_user = client["Economy"]["Users"].find_one({"_id": int(discord_id)}) or {}
         coins = eco_user.get("coins", 0)
         streak = eco_user.get("streak", 0)
 
-        level_col = client["hayday"]["level"]
-        level_doc = level_col.find_one({"_id": discord_id})
-
+        # Mentions
         mention_col = client["Mentions"]["Amount"]
         mention_doc = mention_col.find_one({"id": int(discord_id)})
         mention_count = mention_doc.get("Mentions", 0) if mention_doc else 0
 
+        # Level
+        level_col = client["hayday"]["level"]
+        level_doc = level_col.find_one({"_id": discord_id})
         if level_doc:
             level = level_doc.get("level", 1)
             xp = level_doc.get("xp", 0)
@@ -2554,9 +2539,9 @@ def public_profile(discord_id):
             rank = next((i + 1 for i, u in enumerate(all_users) if u["_id"] == discord_id), "?")
 
     return render_template("profile.html",
-        discord_id=user["_id"],
-        display_name=user.get("display_name", "Unknown"),
-        avatar_hash=user.get("avatar_hash", ""),
+        discord_id=discord_id,
+        display_name=display_name,
+        avatar_url=avatar_url,
         user=user,
         staff_badges=staff_badges,
         level=level,
@@ -2574,6 +2559,7 @@ def public_profile(discord_id):
         streak=streak,
         is_owner=is_owner
     )
+
 
 
 

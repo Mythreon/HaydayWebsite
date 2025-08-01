@@ -642,7 +642,7 @@ dialog.styled-modal::backdrop {
   <div class="profile-container">
 
     <div class="profile-header">
-    <img class="avatar" src="https://cdn.discordapp.com/avatars/{{ discord_id }}/{{ avatar_hash }}.png" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+    <img class="avatar" src="{{ avatar_url }}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
     {% if user.featured_achievement %}
       <div class="featured-badge-floating sparkle">
         {{ user.featured_achievement }}
