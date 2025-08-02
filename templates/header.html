@@ -4,10 +4,6 @@
       <a href="/">🌾 HayDay 🍀</a>
     </div>
 
-    <!-- Mobile Menu Button -->
-    <div class="nav-toggle" id="nav-toggle" onclick="toggleMenu()">☰</div>
-    <div class="nav-close" id="nav-close" onclick="toggleMenu()">✖</div>
-
     <!-- Navigation Links -->
     <ul class="nav-links" id="nav-links">
       <li class="{% if request.path == '/' %}active{% endif %}"><a href="/">Home</a></li>
@@ -216,6 +212,9 @@
       navToggle.classList.add("show");
       navClose.classList.remove("show");
     }
+
+    // Lock or restore scroll
+    document.body.style.overflow = isOpen ? 'hidden' : '';
   }
 
   function updateToggleVisibility() {
@@ -240,4 +239,26 @@
 
   window.addEventListener("DOMContentLoaded", updateToggleVisibility);
   window.addEventListener("resize", updateToggleVisibility);
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("nav-toggle").addEventListener("click", toggleMenu);
+    document.getElementById("nav-close").addEventListener("click", toggleMenu);
+
+    // Optional: close mobile menu when link is clicked
+    document.querySelectorAll(".nav-links a").forEach(link => {
+      link.addEventListener("click", (e) => {
+        const isDropdownTrigger = link.nextElementSibling && link.nextElementSibling.classList.contains("dropdown-content");
+
+        // Don’t auto-close if it's a dropdown parent
+        if (window.innerWidth < 768 && !isDropdownTrigger) {
+          document.getElementById("nav-links").classList.remove("show");
+          document.getElementById("nav-toggle").classList.add("show");
+          document.getElementById("nav-close").classList.remove("show");
+          document.body.style.overflow = ""; // Restore scroll
+        }
+      });
+    });
+
+  });
 </script>
