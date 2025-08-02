@@ -5,7 +5,8 @@
     </div>
 
     <!-- Mobile Menu Button -->
-    <div class="nav-toggle" onclick="toggleMenu()">☰</div>
+     <div class="nav-toggle" id="nav-toggle">☰</div>
+     <div class="nav-close" id="nav-close">✖</div>
 
     <!-- Navigation Links -->
     <ul class="nav-links" id="nav-links">
@@ -71,15 +72,9 @@
   text-decoration: none;
 }
 
-.nav-toggle {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  display: none;
-  font-size: 28px;
-  color: white;
-  cursor: pointer;
-  z-index: 1002;
+.nav-toggle,
+.nav-close {
+  display: none; 
 }
 
 .nav-links {
@@ -110,7 +105,6 @@
   color: white;
 }
 
-/* Dropdowns */
 .dropdown-content {
   display: none;
   position: absolute;
@@ -137,33 +131,37 @@
   padding: 10px 14px;
 }
 
-@media (max-width: 768px) {
-  .navbar {
-    position: relative;
-    display: block;
-    align-items: center;
-  }
-
-  .nav-logo {
-    flex: 1;
-    text-align: left;
-  }
-
-  .nav-toggle {
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    display: block;
+@media (max-width: 767px) {
+  .nav-toggle,
+  .nav-close {
+    position: fixed;
+    top: 14px;
+    right: 20px;
     font-size: 28px;
+    color: white;
     z-index: 1002;
+    cursor: pointer;
+  }
+
+  .nav-toggle.show,
+  .nav-close.show {
+    display: block;
   }
 
   .nav-links {
     display: none;
     flex-direction: column;
-    width: 100%;
-    margin-top: 50px;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: rgba(30, 30, 30, 0.98);
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
   }
 
   .nav-links.show {
@@ -171,8 +169,8 @@
   }
 
   .dropdown-content {
-    position: relative;
-    background: #1e1e1e;
+    position: static;
+    background: transparent;
     box-shadow: none;
     opacity: 1 !important;
     pointer-events: auto;
@@ -180,7 +178,7 @@
 
   .dropdown-content li a {
     padding: 10px 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #444;
   }
 
   .dropdown-content li:last-child a {
@@ -188,17 +186,58 @@
   }
 }
 
-
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
 </style>
 
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-<script>
+
+<script> /* Xavi's original. I left it here in case you need to use it.
   function toggleMenu() {
     document.getElementById("nav-links").classList.toggle("show");
+  } */
+</script>
+
+<script> // Added by Magzie, ensuring it'll work at all times. 
+  function toggleMenu() {
+    const navLinks = document.getElementById("nav-links");
+    const navToggle = document.getElementById("nav-toggle");
+    const navClose = document.getElementById("nav-close");
+
+    const isOpen = navLinks.classList.toggle("show");
+
+    if (isOpen) {
+      navToggle.classList.remove("show");
+      navClose.classList.add("show");
+    } else {
+      navToggle.classList.add("show");
+      navClose.classList.remove("show");
+    }
   }
+
+  function updateToggleVisibility() {
+    const navToggle = document.getElementById("nav-toggle");
+    const navClose = document.getElementById("nav-close");
+    const navLinks = document.getElementById("nav-links");
+
+    if (window.innerWidth < 768) {
+      if (navLinks.classList.contains("show")) {
+        navToggle.classList.remove("show");
+        navClose.classList.add("show");
+      } else {
+        navToggle.classList.add("show");
+        navClose.classList.remove("show");
+      }
+    } else {
+      navToggle.classList.remove("show");
+      navClose.classList.remove("show");
+      navLinks.classList.remove("show");
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", updateToggleVisibility);
+  window.addEventListener("resize", updateToggleVisibility);
 </script>
