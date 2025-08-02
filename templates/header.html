@@ -115,7 +115,6 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   overflow: hidden;
-  opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
@@ -171,13 +170,21 @@
     pointer-events: auto;
   }
 
-  .dropdown-content {
-    position: static;
-    background: transparent;
-    box-shadow: none;
-    opacity: 1 !important;
-    pointer-events: auto;
-  }
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background: #333; 
+  top: 100%;
+  left: 0;
+  min-width: 180px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  overflow: hidden;
+  opacity: 1 !important; 
+  pointer-events: none;
+  transition: none;
+}
+
 
   .dropdown-content li a {
     padding: 10px 16px;
@@ -192,6 +199,11 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+body.no-scroll {
+  overflow: hidden;
+  height: 100vh;
 }
 
 </style>
@@ -209,15 +221,18 @@
     const navLinks = document.getElementById("nav-links");
     const navToggle = document.getElementById("nav-toggle");
     const navClose = document.getElementById("nav-close");
+    const body = document.body;
 
     const isOpen = navLinks.classList.toggle("show");
 
     if (isOpen) {
       navToggle.classList.remove("show");
       navClose.classList.add("show");
+      body.classList.add("no-scroll"); 
     } else {
       navToggle.classList.add("show");
       navClose.classList.remove("show");
+      body.classList.remove("no-scroll");
     }
   }
 
@@ -225,19 +240,23 @@
     const navToggle = document.getElementById("nav-toggle");
     const navClose = document.getElementById("nav-close");
     const navLinks = document.getElementById("nav-links");
+    const body = document.body;
 
     if (window.innerWidth < 768) {
       if (navLinks.classList.contains("show")) {
         navToggle.classList.remove("show");
         navClose.classList.add("show");
+        body.classList.add("no-scroll"); 
       } else {
         navToggle.classList.add("show");
         navClose.classList.remove("show");
+        body.classList.remove("no-scroll"); 
       }
     } else {
       navToggle.classList.remove("show");
       navClose.classList.remove("show");
       navLinks.classList.remove("show");
+      body.classList.remove("no-scroll");
     }
   }
 
