@@ -16,6 +16,7 @@ header {
 }
 body {
   transition: background-color 0.4s ease, color 0.4s ease;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 body.dark header {
